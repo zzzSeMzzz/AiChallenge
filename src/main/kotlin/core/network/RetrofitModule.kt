@@ -1,21 +1,29 @@
 package core.network
 
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import core.BuildConfig
 import core.SERVER_URL
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import retrofit2.converter.moshi.MoshiConverterFactory
+import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+
 
 object RetrofitModule { // Изменён на object для синглтона
 
-    private val moshi: Moshi by lazy {
+
+    private val authInterceptor = okhttp3.Interceptor { chain ->
+        val newRequest = chain.request().newBuilder()
+            .addHeader("Authorization", "Api-Key ${BuildConfig.YA_API_KEY}")
+            .build()
+        chain.proceed(newRequest)
+    }
+
+    /*private val moshi: Moshi by lazy {
         Moshi.Builder()
             .add(KotlinJsonAdapterFactory())
             .build()
-    }
+    }*/
 
     private val okHttpClient: OkHttpClient by lazy {
         val client = OkHttpClient.Builder()
@@ -32,15 +40,14 @@ object RetrofitModule { // Изменён на object для синглтона
     }
 
     val retrofit: Retrofit by lazy {
-        provideRetrofit(moshi, okHttpClient)
+        provideRetrofit(okHttpClient)
     }
 
     private fun provideRetrofit(
-        moshi: Moshi,
         okHttpClient: OkHttpClient,
     ): Retrofit {
         return Retrofit.Builder()
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .addConverterFactory(GsonConverterFactory.create())
             .baseUrl(SERVER_URL)
             .client(okHttpClient)
             .build()

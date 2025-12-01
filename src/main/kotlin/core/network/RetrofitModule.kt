@@ -1,5 +1,6 @@
 package core.network
 
+import com.google.gson.Gson
 import core.BuildConfig
 import core.SERVER_URL
 import okhttp3.OkHttpClient
@@ -19,11 +20,6 @@ object RetrofitModule { // Изменён на object для синглтона
         chain.proceed(newRequest)
     }
 
-    /*private val moshi: Moshi by lazy {
-        Moshi.Builder()
-            .add(KotlinJsonAdapterFactory())
-            .build()
-    }*/
 
     private val okHttpClient: OkHttpClient by lazy {
         val client = OkHttpClient.Builder()
@@ -33,9 +29,10 @@ object RetrofitModule { // Изменён на object для синглтона
             .readTimeout(1, TimeUnit.MINUTES)
 
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = HttpLoggingInterceptor.Level.BASIC
         }
         client.addInterceptor(loggingInterceptor)
+        client.addInterceptor(authInterceptor)
         client.build()
     }
 
@@ -46,10 +43,17 @@ object RetrofitModule { // Изменён на object для синглтона
     private fun provideRetrofit(
         okHttpClient: OkHttpClient,
     ): Retrofit {
+        val lenientGson = Gson().newBuilder()
+            .create()
+
         return Retrofit.Builder()
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(lenientGson))
             .baseUrl(SERVER_URL)
             .client(okHttpClient)
             .build()
+    }
+
+    val service: MainService by lazy {
+        retrofit.create(MainService::class.java)
     }
 }

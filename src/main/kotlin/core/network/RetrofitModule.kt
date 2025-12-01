@@ -29,9 +29,9 @@ object RetrofitModule { // Изменён на object для синглтона
             .readTimeout(1, TimeUnit.MINUTES)
 
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BASIC
+            level = HttpLoggingInterceptor.Level.BODY
         }
-        client.addInterceptor(loggingInterceptor)
+        //client.addInterceptor(loggingInterceptor)
         client.addInterceptor(authInterceptor)
         client.build()
     }
@@ -44,6 +44,7 @@ object RetrofitModule { // Изменён на object для синглтона
         okHttpClient: OkHttpClient,
     ): Retrofit {
         val lenientGson = Gson().newBuilder()
+            .setLenient()
             .create()
 
         return Retrofit.Builder()

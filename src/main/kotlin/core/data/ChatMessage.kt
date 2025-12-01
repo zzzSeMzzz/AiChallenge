@@ -14,10 +14,10 @@ data class YaGptRequest(
     val messages: List<ChatMessage>
 ) {
     companion object {
-        fun create(text: String): YaGptRequest {
+        fun create(text: String, steaming: Boolean = false): YaGptRequest {
            return YaGptRequest(
                "gpt://${BuildConfig.CLOUD_FOLDER}/yandexgpt-lite",
-               CompletionOptions(true, 0.3, "1024"),
+               CompletionOptions(steaming, 0.3, "1024"),
                listOf(ChatMessage("user", text))
            )
         }

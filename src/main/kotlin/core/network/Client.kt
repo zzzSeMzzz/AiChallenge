@@ -2,6 +2,7 @@ package core.network
 
 import core.BuildConfig
 import core.SERVER_URL
+import core.data.ChatMessage
 import core.data.YaGptRequest
 import core.data.YaGptResponse
 import io.ktor.client.*
@@ -32,9 +33,23 @@ object Client {
         }
     }
 
-    suspend fun askYaGpt(query: String): String {
+    suspend fun askYaGpt(
+        query: String,
+        formatAsJson: Boolean = false
+    ): String {
+        val systemPrompt = if (formatAsJson) {
+            ChatMessage.system(
+                "Отвечай ТОЛЬКО в формате JSON. Никакого текста до или после. Только валидный JSON. Формат ответа:  {\"answer\": \"answer\", \"subject\":\"subject\"} где subject - тема запроса(строка), answer - ответ в виде строки. и никаких обратных кавычек `"
+            )
+        } else {
+            null
+        }
+
         return try {
-            val request = YaGptRequest.create(query)
+            val request = YaGptRequest.create(
+                text = query,
+                systemPrompt = systemPrompt
+            )
 
             val response: YaGptResponse = client.post("$SERVER_URL/foundationModels/v1/completion") {
                 contentType(ContentType.Application.Json)

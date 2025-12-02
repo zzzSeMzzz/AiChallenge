@@ -31,11 +31,7 @@ suspend fun main() = runBlocking {
     }
 }*/
 
-import core.data.YaGptRequest
 import core.network.Client
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.cio.*
 
 suspend fun main(args: Array<String>) {
     println("Консольный чат с YandexGpt")
@@ -49,10 +45,11 @@ suspend fun main(args: Array<String>) {
         when (input.lowercase()) {
             "exit", "выход", "quit" -> {
                 println("Чат завершён.")
+                Client.close()
                 return// Завершаем блок runBlocking, что приводит к завершению main
             }
             else -> {
-                val answer = Client.askYaGpt(input)
+                val answer = Client.askYaGpt(input, true)
                 println("YaGpt: $answer")
             }
         }

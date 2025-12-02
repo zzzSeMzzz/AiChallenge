@@ -7,20 +7,31 @@ import kotlinx.serialization.Serializable
 data class ChatMessage(
     val role: String,
     val text: String
-)
+) {
+    companion object {
+        fun system(text: String) = ChatMessage("system", text);
+    }
+}
 
 @Serializable
 data class YaGptRequest(
     val modelUri: String,
     val completionOptions: CompletionOptions,
-    val messages: List<ChatMessage>
+    val messages: List<ChatMessage>,
 ) {
     companion object {
-        fun create(text: String, steaming: Boolean = false): YaGptRequest {
+        fun create(
+            text: String,
+            systemPrompt: ChatMessage? = null,
+            steaming: Boolean = false,
+        ): YaGptRequest {
+           val messages = mutableListOf<ChatMessage>()
+           messages.add(ChatMessage("user", text))
+           systemPrompt?.let { messages.add(it) }
            return YaGptRequest(
-               "gpt://${BuildConfig.CLOUD_FOLDER}/yandexgpt-lite",
-               CompletionOptions(steaming, 0.3, "150"),
-               listOf(ChatMessage("user", text))
+               modelUri = "gpt://${BuildConfig.CLOUD_FOLDER}/yandexgpt-lite",
+               completionOptions = CompletionOptions(steaming, 0.3, "256"),
+               messages = messages,
            )
         }
     }

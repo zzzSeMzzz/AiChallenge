@@ -14,7 +14,7 @@ suspend fun main(args: Array<String>) {
             "exit", "выход", "quit" -> {
                 println("Чат завершён.")
                 Client.close()
-                return// Завершаем блок runBlocking, что приводит к завершению main
+                return
             }
             else -> {
                 val answer = Client.askYaGpt(input, true).replace("\n", "").replace("`", "")

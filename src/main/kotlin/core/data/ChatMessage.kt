@@ -19,7 +19,7 @@ data class YaGptRequest(
         fun create(text: String, steaming: Boolean = false): YaGptRequest {
            return YaGptRequest(
                "gpt://${BuildConfig.CLOUD_FOLDER}/yandexgpt-lite",
-               CompletionOptions(steaming, 0.3, "1024"),
+               CompletionOptions(steaming, 0.3, "150"),
                listOf(ChatMessage("user", text))
            )
         }

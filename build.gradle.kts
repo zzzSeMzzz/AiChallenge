@@ -1,6 +1,6 @@
+
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.*
-import org.gradle.jvm.toolchain.JavaLanguageVersion // Вам может понадобиться этот импорт
 
 
 plugins {
@@ -72,6 +72,9 @@ dependencies {
 
     // Kotlinx serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
+    implementation("org.slf4j:slf4j-simple:2.0.12")
+    implementation("io.ktor:ktor-client-logging:3.0.3")
 }
 
 tasks.test {

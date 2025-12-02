@@ -4,16 +4,14 @@ import core.BuildConfig
 import core.SERVER_URL
 import core.data.YaGptRequest
 import core.data.YaGptResponse
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
-import io.ktor.serialization.kotlinx.json.json
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
 
@@ -28,8 +26,11 @@ object Client {
         install(ContentNegotiation) {
             json(jsonParser)
         }
+        install(Logging) {
+            //logger = Logger. // ← используем SLF4J как бэкенд
+            level = io.ktor.client.plugins.logging.LogLevel.ALL
+        }
     }
-
 
     suspend fun askYaGpt(query: String): String {
         return try {
@@ -37,7 +38,7 @@ object Client {
 
             val response: YaGptResponse = client.post("$SERVER_URL/foundationModels/v1/completion") {
                 contentType(ContentType.Application.Json)
-                header("Authorization", "Key ${BuildConfig.YA_API_KEY}")
+                header("Authorization", "Api-Key ${BuildConfig.YA_API_KEY}")
                 setBody(request)
             }.body()
 
@@ -45,8 +46,12 @@ object Client {
                 ?: "Нет ответа от модели."
         } catch (e: Exception) {
             "Error: ${e.message}"
-        } finally {
+        } /*finally {
             client.close()
-        }
+        }*/
+    }
+
+    fun close() {
+        client.close()
     }
 }

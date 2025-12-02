@@ -17,7 +17,7 @@ suspend fun main(args: Array<String>) {
                 return
             }
             else -> {
-                val answer = Client.askYaGpt(input, true).replace("\n", "").replace("`", "")
+                val answer = Client.askYaGpt(input, true)//.replace("\n", "").replace("`", "")
                 println("YaGpt: $answer")
 
 

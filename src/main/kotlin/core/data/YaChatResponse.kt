@@ -10,18 +10,18 @@ data class YaGptResponse(
 @Serializable
 data class Result(
     val alternatives: List<Alternative>,
-    val usage: Usage
+    val usage: Usage?
 )
 
 @Serializable
 data class Alternative(
     val message: ChatMessage,
-    val status: String
+    val status: String?
 )
 
 @Serializable
 data class Usage(
-    val inputTextTokens: String,
-    val outputTextTokens: String,
-    val totalTokens: String
+    val inputTextTokens: String?,
+    val completionTokens: String?,
+    val totalTokens: String?
 )

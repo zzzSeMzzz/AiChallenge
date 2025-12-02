@@ -9,7 +9,6 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -27,10 +26,10 @@ object Client {
         install(ContentNegotiation) {
             json(jsonParser)
         }
-        install(Logging) {
+        /*install(Logging) {
             //logger = Logger. // ← используем SLF4J как бэкенд
             level = io.ktor.client.plugins.logging.LogLevel.ALL
-        }
+        }*/
     }
 
     suspend fun askYaGpt(

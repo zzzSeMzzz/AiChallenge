@@ -5,7 +5,6 @@ suspend fun main(args: Array<String>) {
     println("Консольный чат с YandexGpt")
     println("Введите exit для выхода")
 
-
     while (true) {
         print("Вы: ")
         val input = readlnOrNull()?.trim() ?: continue

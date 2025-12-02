@@ -1,13 +1,15 @@
 package core.data
 
 import core.BuildConfig
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class ChatMessage(
     val role: String,
     val text: String
 )
 
-
+@Serializable
 data class YaGptRequest(
     val modelUri: String,
     val completionOptions: CompletionOptions,
@@ -23,7 +25,7 @@ data class YaGptRequest(
         }
     }
 }
-
+@Serializable
 data class CompletionOptions(
     val stream: Boolean,
     val temperature: Double,

@@ -1,8 +1,11 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.*
+import org.gradle.jvm.toolchain.JavaLanguageVersion // Вам может понадобиться этот импорт
+
 
 plugins {
-    kotlin("jvm") version "1.9.22"
+    kotlin("jvm") version "2.2.0"
+    kotlin("plugin.serialization") version "2.2.0"
     application
 }
 
@@ -60,27 +63,29 @@ dependencies {
     testImplementation(kotlin("test"))
 
     // Корутины
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    /*implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")*/
 
-    // Retrofit
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("io.ktor:ktor-client-core:3.0.2")
+    implementation("io.ktor:ktor-client-cio:3.0.2")
+    implementation("io.ktor:ktor-client-content-negotiation:3.0.2")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.0.2")
 
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    // GSON (Retrofit использует встроенный Gson, но можно указать явно)
-    implementation("com.google.code.gson:gson:2.10.1")
-
-    // OkHttp
-    implementation("com.squareup.okhttp3:okhttp:4.11.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+    // Kotlinx serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 }
 
 tasks.test {
     useJUnitPlatform()
 }
 
+// 👇 НОВЫЙ БЛОК: Правильное место для jvmToolchain
+kotlin {
+    jvmToolchain(17)
+}
+
 tasks.withType<KotlinCompile> {
     dependsOn(generateBuildConfig)
-    kotlinOptions.jvmTarget = "1.8"
+    //kotlinOptions.jvmTarget = "1.8"
 }
 
 application {

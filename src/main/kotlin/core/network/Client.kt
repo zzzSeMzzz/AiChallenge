@@ -47,7 +47,8 @@ object Client {
         return try {
             val request = YaGptRequest.create(
                 text = query,
-                systemPrompt = systemPrompt
+                systemPrompt = systemPrompt,
+                jsonObject = formatAsJson
             )
 
             val response: YaGptResponse = client.post("$SERVER_URL/foundationModels/v1/completion") {

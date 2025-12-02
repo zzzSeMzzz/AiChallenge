@@ -16,6 +16,7 @@ data class ChatMessage(
 @Serializable
 data class YaGptRequest(
     val modelUri: String,
+    val jsonObject: Boolean?,
     val completionOptions: CompletionOptions,
     val messages: List<ChatMessage>,
 ) {
@@ -23,6 +24,7 @@ data class YaGptRequest(
         fun create(
             text: String,
             systemPrompt: ChatMessage? = null,
+            jsonObject: Boolean? = null,
             steaming: Boolean = false,
         ): YaGptRequest {
            val messages = mutableListOf<ChatMessage>()
@@ -32,6 +34,7 @@ data class YaGptRequest(
                modelUri = "gpt://${BuildConfig.CLOUD_FOLDER}/yandexgpt-lite",
                completionOptions = CompletionOptions(steaming, 0.3, "256"),
                messages = messages,
+               jsonObject = jsonObject
            )
         }
     }

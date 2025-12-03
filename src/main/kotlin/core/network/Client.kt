@@ -86,6 +86,8 @@ object Client {
     }
 
     fun close() {
-        client.close()
+        try {
+            client.close()
+        } catch (e: Exception) { }
     }
 }

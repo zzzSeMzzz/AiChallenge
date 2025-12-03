@@ -32,7 +32,7 @@ data class YaGptRequest(
            systemPrompt?.let { messages.add(it) }
            return YaGptRequest(
                modelUri = "gpt://${BuildConfig.CLOUD_FOLDER}/yandexgpt-lite",
-               completionOptions = CompletionOptions(steaming, 0.3, "256"),
+               completionOptions = CompletionOptions(steaming, 0.4, "256"),
                messages = messages,
                jsonObject = jsonObject
            )

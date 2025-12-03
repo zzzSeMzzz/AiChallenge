@@ -34,14 +34,11 @@ object Client {
 
     suspend fun askYaGpt(
         query: String,
+        systemPromptString: String? = null,
         formatAsJson: Boolean = false
     ): String {
-        val systemPrompt = if (formatAsJson) {
-            ChatMessage.system(
-                "Отвечай ТОЛЬКО в формате JSON. Никакого текста до или после. Только валидный JSON. Формат ответа:  {\"answer\": \"answer\", \"subject\":\"subject\"} где subject - тема запроса(строка), answer - ответ в виде строки. и никаких обратных кавычек `"
-            )
-        } else {
-            null
+        val systemPrompt = systemPromptString?.let {
+            ChatMessage.system(it)
         }
 
         return try {

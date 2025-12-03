@@ -5,10 +5,18 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
 @Serializable
-data class Message(
+data class PerMessage(
     val role: String,
     val content: String
-)
+) {
+    companion object {
+        fun system(text: String) = PerMessage("system", text)
+
+        fun assistant(text: String) = PerMessage("assistant", text)
+
+        fun user(text: String) = PerMessage("user", text)
+    }
+}
 
 @Serializable
 data class ResponseFormat(
@@ -25,14 +33,14 @@ data class JsonSchema(
 @Serializable
 data class PerplexityRequest(
     val model: String,
-    val messages: List<Message>,
+    val messages: List<PerMessage>,
     @SerialName("response_format")
     val responseFormat: ResponseFormat? = null
 )
 
 @Serializable
 data class Choice(
-    val message: Message,
+    val message: PerMessage,
     val index: Int? = null,
     @SerialName("finish_reason")
     val finishReason: String? = null

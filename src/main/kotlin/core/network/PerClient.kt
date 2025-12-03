@@ -1,14 +1,10 @@
 package core.network
 
 import core.BuildConfig
-import core.SERVER_URL
 import core.SERVER_URL_PERPLEXITY
-import core.data.perplexety.Message
+import core.data.perplexety.PerMessage
 import core.data.perplexety.PerplexityRequest
 import core.data.perplexety.PerplexityResponse
-import core.data.ya.ChatMessage
-import core.data.ya.YaGptRequest
-import core.data.ya.YaGptResponse
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -38,7 +34,7 @@ object PerClient {
 
 
     suspend fun askPerplexity(
-        messages: MutableList<Message> // ← теперь принимаем список сообщений
+        messages: MutableList<PerMessage> // ← теперь принимаем список сообщений
     ): String {
         return try {
 
@@ -49,7 +45,7 @@ object PerClient {
         }
     }
 
-    private suspend fun post(messages: MutableList<Message>): PerplexityResponse {
+    private suspend fun post(messages: MutableList<PerMessage>): PerplexityResponse {
         val request = PerplexityRequest(
             model = "sonar-pro",
             messages = messages

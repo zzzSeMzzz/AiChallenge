@@ -6,11 +6,17 @@ suspend fun main(args: Array<String>) {
     println("Введите exit для выхода")
     println("Модель будет задавать вопросы, чтобы понять, что нужно создать.")
 
-    val mobilePromt = "Ты — эксперт по разработке мобильных приложений.Твоя задача — помочь пользователю составить техническое задание (ТЗ) для мобильного приложения.Задавай пользователю по одному уточняющему вопросу"
+    val mobilePromt = "Ты — эксперт по разработке мобильных приложений.Твоя задача составить ТЗ."
+    val mobilePromt1 = "Спроси про платформу, целевую аудиторию, функционал, дизайн. когда соберешь все 4 ответа, выдай ТЗ."
+    val mobilePromt2 = "Один вопрос один ответ"
+    val mobilePromt3 = "Ровно один вопрос за раз и ничего лишнего.Нельзя предполагать ответы пользователя"
+    val mobilePromt4 = "максимум 5-7 вопрос и после пришли готовое ТЗ"
 
     val messages = mutableListOf<ChatMessage>().apply {
-        add(ChatMessage.system(mobilePromt))
+        add(ChatMessage.system("$mobilePromt $mobilePromt1 $mobilePromt3"))
     }
+
+    //messages.add(ChatMessage.user(mobilePromt4))
 
     while (true) {
         print("Вы: ")

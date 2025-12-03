@@ -35,7 +35,7 @@ data class YaGptRequest(
            messages.add(ChatMessage("user", text))
            systemPrompt?.let { messages.add(it) }
            return YaGptRequest(
-               modelUri = "gpt://${BuildConfig.CLOUD_FOLDER}/yandexgpt-lite",
+               modelUri = "gpt://${BuildConfig.CLOUD_FOLDER}/yandexgpt",//-lite
                completionOptions = CompletionOptions(steaming, 0.4, "256"),
                messages = messages,
                jsonObject = jsonObject
@@ -45,11 +45,13 @@ data class YaGptRequest(
         fun createWithMessages(
             messages: List<ChatMessage>,
             steaming: Boolean = false,
+            temperature: Double = 0.1,  // Низкая для детерминизма [web:22]
+            maxTokens: String = "100"
         ): YaGptRequest {
 
             return YaGptRequest(
                 modelUri = "gpt://${BuildConfig.CLOUD_FOLDER}/yandexgpt-lite",
-                completionOptions = CompletionOptions(steaming, 0.4, "256"),
+                completionOptions = CompletionOptions(steaming, temperature, maxTokens),
                 messages = messages,
                 jsonObject = null
             )

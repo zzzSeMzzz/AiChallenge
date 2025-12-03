@@ -48,19 +48,41 @@ object Client {
                 jsonObject = formatAsJson
             )
 
-            val response: YaGptResponse = client.post("$SERVER_URL/foundationModels/v1/completion") {
-                contentType(ContentType.Application.Json)
-                header("Authorization", "Api-Key ${BuildConfig.YA_API_KEY}")
-                setBody(request)
-            }.body()
+            val response = post(request)
 
             response.result.alternatives.firstOrNull()?.message?.text
                 ?: "Нет ответа от модели."
         } catch (e: Exception) {
             "Error: ${e.message}"
-        } /*finally {
-            client.close()
-        }*/
+        }
+    }
+
+
+    suspend fun askYaGpt(
+        messages: List<ChatMessage>, // ← теперь принимаем список сообщений
+    ): String {
+        return try {
+            val request = YaGptRequest.createWithMessages(
+                messages = messages,
+            )
+
+            val response = post(request)
+
+            response.result.alternatives.firstOrNull()?.message?.text
+                ?: "Нет ответа от модели."
+        } catch (e: Exception) {
+            "Error: ${e.message}"
+        }
+    }
+
+    private suspend fun post(request: YaGptRequest): YaGptResponse {
+        val response: YaGptResponse =
+            client.post("$SERVER_URL/foundationModels/v1/completion") {
+                contentType(ContentType.Application.Json)
+                header("Authorization", "Api-Key ${BuildConfig.YA_API_KEY}")
+                setBody(request)
+            }.body()
+        return response
     }
 
     fun close() {

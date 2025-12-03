@@ -1,5 +1,5 @@
+import core.data.ChatMessage
 import core.network.Client
-import kotlinx.serialization.json.jsonObject
 
 suspend fun main(args: Array<String>) {
     println("Консольный чат с YandexGpt для создания ТЗ мобильного приложения")
@@ -22,24 +22,28 @@ suspend fun main(args: Array<String>) {
                 Не спеши. Задавай вопросы по одному, пока не будешь готов к финальному выводу.
             """.trimIndent()
 
+    val messages = mutableListOf<ChatMessage>().apply {
+        add(ChatMessage.system(mobilePromt))
+    }
+
     while (true) {
         print("Вы: ")
         val input = readlnOrNull()?.trim() ?: continue
 
-        when (input.lowercase()) {
-            "exit", "выход", "quit" -> {
-                println("Чат завершён.")
-                Client.close()
-                return
-            }
-            else -> {
-                val answer = Client.askYaGpt(
-                    query = input,
-                    systemPromptString = mobilePromt
-                )
-                println("YaGpt: $answer")
-
-            }
+        if (input.lowercase() in listOf("exit", "выход", "quit")) {
+            println("Чат завершён.")
+            Client.close()
+            return
         }
+
+        // Добавляем сообщение пользователя
+        messages.add(ChatMessage.user(input))
+
+        // Отправляем всю историю
+        val answer = Client.askYaGpt(messages)
+        println("YaGpt: $answer")
+
+        // Добавляем ответ модели
+        messages.add(ChatMessage.assistant(answer))
     }
 }

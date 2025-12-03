@@ -9,7 +9,11 @@ data class ChatMessage(
     val text: String
 ) {
     companion object {
-        fun system(text: String) = ChatMessage("system", text);
+        fun system(text: String) = ChatMessage("system", text)
+
+        fun assistant(text: String) = ChatMessage("assistant", text)
+
+        fun user(text: String) = ChatMessage("user", text)
     }
 }
 
@@ -36,6 +40,19 @@ data class YaGptRequest(
                messages = messages,
                jsonObject = jsonObject
            )
+        }
+
+        fun createWithMessages(
+            messages: List<ChatMessage>,
+            steaming: Boolean = false,
+        ): YaGptRequest {
+
+            return YaGptRequest(
+                modelUri = "gpt://${BuildConfig.CLOUD_FOLDER}/yandexgpt-lite",
+                completionOptions = CompletionOptions(steaming, 0.4, "256"),
+                messages = messages,
+                jsonObject = null
+            )
         }
     }
 }

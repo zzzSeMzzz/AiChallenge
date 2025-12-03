@@ -25,6 +25,8 @@ val yaApiKey: String = localProperties.getProperty("YA_API_KEY")
     ?: throw GradleException("API_KEY не найден в local.properties")
 val cloudFolder: String = localProperties.getProperty("CLOUD_FOLDER")
     ?: throw GradleException("API_KEY не найден в local.properties")
+val perplexityApiKey: String = localProperties.getProperty("PERPLEXITY_API_KEY")
+    ?: throw GradleException("API_KEY не найден в local.properties")
 
 // Генерация BuildConfig
 val generateBuildConfig by tasks.registering {
@@ -34,6 +36,7 @@ val generateBuildConfig by tasks.registering {
 
     inputs.property("yaApiKey", yaApiKey)
     inputs.property("cloudFolder", cloudFolder)
+    inputs.property("perplexityApiKey", perplexityApiKey)
     outputs.file(outputFile)
 
     doFirst {
@@ -44,6 +47,7 @@ val generateBuildConfig by tasks.registering {
                   object BuildConfig {
                       const val YA_API_KEY: String = "$yaApiKey"
                       const val CLOUD_FOLDER: String = "$cloudFolder"
+                      const val PERPLEXITY_API_KEY: String = "$perplexityApiKey"
                   }
             """.trimIndent()
         )

@@ -1,4 +1,4 @@
-import core.data.ChatMessage
+import core.data.ya.ChatMessage
 import core.network.Client
 
 suspend fun main(args: Array<String>) {

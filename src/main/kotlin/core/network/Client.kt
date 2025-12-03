@@ -2,9 +2,9 @@ package core.network
 
 import core.BuildConfig
 import core.SERVER_URL
-import core.data.ChatMessage
-import core.data.YaGptRequest
-import core.data.YaGptResponse
+import core.data.ya.ChatMessage
+import core.data.ya.YaGptRequest
+import core.data.ya.YaGptResponse
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*

@@ -26,6 +26,7 @@ suspend fun main(args: Array<String>) {
             }
             input.startsWith("s:") -> {
                 messages.add(PerMessage.system(input.substring(2).trim()))
+                continue
             }
             else -> {
                 messages.add(PerMessage.user(input))

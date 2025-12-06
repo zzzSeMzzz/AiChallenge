@@ -12,8 +12,6 @@ suspend fun main(args: Array<String>) {
         add(PerMessage.system("Ты шеф вовар известного ресторана"))
     }
 
-
-
     while (true) {
         print("Вы: ")
         val input = readlnOrNull()?.trim() ?: continue

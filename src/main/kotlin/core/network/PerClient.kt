@@ -8,6 +8,7 @@ import core.data.perplexety.PerplexityResponse
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -25,6 +26,11 @@ object PerClient {
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(jsonParser)
+        }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 60_000 // Максимальное время запроса — 60 сек
+            connectTimeoutMillis = 30_000  // Таймаут подключения
+            socketTimeoutMillis = 60_000   // Чтение/запись
         }
         /*install(Logging) {
             //logger = Logger. // ← используем SLF4J как бэкенд
@@ -48,7 +54,8 @@ object PerClient {
     private suspend fun post(messages: MutableList<PerMessage>): PerplexityResponse {
         val request = PerplexityRequest(
             model = "sonar-pro",
-            messages = messages
+            messages = messages,
+            maxTokens = 512,
         )
 
         val response: PerplexityResponse =

@@ -23,7 +23,11 @@ suspend fun main(args: Array<String>) {
                 return
             }
             input.startsWith("s:") -> {
-                messages.add(PerMessage.system(input.substring(2).trim()))
+                //remove old system prompt
+                if(messages.firstOrNull()?.role == "system") {
+                    messages.removeAt(0)
+                }
+                messages.add(0, PerMessage.system(input.substring(2).trim()))
                 continue
             }
             else -> {

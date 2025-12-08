@@ -37,7 +37,9 @@ data class PerplexityRequest(
     @SerialName("response_format")
     val responseFormat: ResponseFormat? = null,
     @SerialName("max_tokens")
-    val maxTokens: Int? = null
+    val maxTokens: Int? = null,
+    @SerialName("temperature")
+    val temperature: Double? = null,
 )
 
 @Serializable

@@ -1,15 +1,14 @@
 
-import core.data.ya.ChatMessage
+import core.data.perplexety.PerMessage
 import core.network.Client
+import core.network.PerClient
 
 suspend fun main(args: Array<String>) {
-    println("Консольный чат с YaGPT")
-    println("Введите exit для выхода, s: для задания системного промптa")
-    println("Первый system prompt: Ты шеф вовар известного ресторана")
+    println("Консольный чат с Perplexity")
+    println("Введите exit для выхода,\ns: для задания системного промптa")
 
-    val messages = mutableListOf<ChatMessage>().apply {
-        //add(PerMessage.system("Ты шеф вовар известного ресторана"))
-        add(ChatMessage.system("Ты шеф повар известного ресторана"))
+    val messages = mutableListOf<PerMessage>().apply {
+        add(PerMessage.system("Ты сценарист"))
     }
 
     while (true) {
@@ -27,19 +26,25 @@ suspend fun main(args: Array<String>) {
                 if(messages.firstOrNull()?.role == "system") {
                     messages.removeAt(0)
                 }
-                messages.add(0, ChatMessage.system(input.substring(2).trim()))
+                messages.add(0, PerMessage.system(input.substring(2).trim()))
                 continue
             }
             else -> {
-                messages.add(ChatMessage.user(input))
+                messages.add(PerMessage.user(input))
             }
         }
 
-        //val answer = PerClient.askPerplexity(messages)
-        val answer = Client.askYaGpt(messages)
+        /*val answer = Client.askYaGpt(
+            messages,
+            temperature = 1.2
+        )*/
+        val answer = PerClient.askPerplexity(
+            messages,
+            temperature = 1.2
+        )
         println("Agent: $answer")
 
         // Добавляем ответ модели
-        messages.add(ChatMessage.assistant(answer))
+        messages.add(PerMessage.assistant(answer))
     }
 }

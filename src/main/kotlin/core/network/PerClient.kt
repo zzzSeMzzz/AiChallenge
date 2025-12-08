@@ -40,22 +40,26 @@ object PerClient {
 
 
     suspend fun askPerplexity(
-        messages: MutableList<PerMessage> // ← теперь принимаем список сообщений
+        messages: MutableList<PerMessage>,
+        temperature: Double = 0.7// ← теперь принимаем список сообщений
     ): String {
         return try {
-
-            val response = post(messages)
+            val response = post(messages, temperature)
             return response.choices.firstOrNull()?.message?.content ?: "Нет ответа от модели."
         } catch (e: Exception) {
             "Error: ${e.message}"
         }
     }
 
-    private suspend fun post(messages: MutableList<PerMessage>): PerplexityResponse {
+    private suspend fun post(
+        messages: MutableList<PerMessage>,
+        temperature: Double = 0.7
+    ): PerplexityResponse {
         val request = PerplexityRequest(
             model = "sonar-pro",
             messages = messages,
             maxTokens = 512,
+            temperature = temperature
         )
 
         val response: PerplexityResponse =

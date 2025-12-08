@@ -60,10 +60,12 @@ object Client {
 
     suspend fun askYaGpt(
         messages: List<ChatMessage>, // ← теперь принимаем список сообщений
+        temperature: Double = 0.1,
     ): String {
         return try {
             val request = YaGptRequest.createWithMessages(
                 messages = messages,
+                temperature =  temperature,
             )
 
             val response = post(request)

@@ -1,6 +1,5 @@
 
 import core.data.perplexety.PerMessage
-import core.network.Client
 import core.network.PerClient
 
 suspend fun main(args: Array<String>) {
@@ -18,7 +17,7 @@ suspend fun main(args: Array<String>) {
         when {
             input.lowercase() in listOf("exit", "выход", "quit") -> {
                 println("Чат завершён.")
-                Client.close()
+                PerClient.close()
                 return
             }
             input.startsWith("s:") -> {
@@ -40,7 +39,7 @@ suspend fun main(args: Array<String>) {
         )*/
         val answer = PerClient.askPerplexity(
             messages,
-            temperature = 1.2
+            temperature = 0.0
         )
         println("Agent: $answer")
 

@@ -39,7 +39,7 @@ suspend fun main(args: Array<String>) {
         )*/
         val answer = PerClient.askPerplexity(
             messages,
-            temperature = 0.0
+            temperature = 1.2
         )
         println("Agent: $answer")
 

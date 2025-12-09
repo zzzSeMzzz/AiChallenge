@@ -7,7 +7,7 @@ import core.utils.ClientManager
 //sonar, sonar-pro, sonar-reasoning, yandexgpt-lite
 suspend fun main(args: Array<String>) {
     val clientType = AiClientType.PERPLEXITY
-    val model = "sonar"//sonar Reasoning
+    val model = "sonar"//yandexgpt-lite
 
     println("Консольный чат с $clientType")
     println("Введите exit для выхода,\ns: для задания системного промптa")
@@ -16,7 +16,6 @@ suspend fun main(args: Array<String>) {
     while (true) {
         print("Вы: ")
         val input = readlnOrNull()?.trim() ?: continue
-
         when {
             input.lowercase() in listOf("exit", "выход", "quit") -> {
                 println("Чат завершён.")
@@ -34,6 +33,7 @@ suspend fun main(args: Array<String>) {
                 continue
             }
             else -> {
+                val tStart = System.nanoTime()
                 val answer = ClientManager.ask(
                     client = clientType,
                     input = input.substring(2).trim(),
@@ -41,8 +41,13 @@ suspend fun main(args: Array<String>) {
                     temperature = 0.3,
                     isSystemPrompt = false
                 )
+                val tEnd = System.nanoTime()
+                val latencyMs = (tEnd - tStart) / 1_000_000
 
                 println("Agent: ${answer?.answer()}")
+
+                println("Потребовалось времени: $latencyMs")
+                println("Использовано токенов: ${answer?.totalTokens()}, цена $${answer?.totalPrice()}")
             }
         }
     }

@@ -46,8 +46,10 @@ suspend fun main(args: Array<String>) {
 
                 println("Agent: ${answer?.answer()}")
 
+                val currency = when (clientType) { AiClientType.YANDEX_GPT ->  "руб."  else -> "$" }
+
                 println("Потребовалось времени: $latencyMs")
-                println("Использовано токенов: ${answer?.totalTokens()}, цена $${answer?.totalPrice()}")
+                println("Использовано токенов: ${answer?.totalTokens()}, цена $${answer?.totalPrice()} $currency")
             }
         }
     }

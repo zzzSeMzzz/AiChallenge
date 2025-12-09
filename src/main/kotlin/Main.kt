@@ -5,9 +5,9 @@ import core.utils.ClientManager
 
 //sonar, sonar-pro, sonar-reasoning, yandexgpt-lite
 suspend fun main(args: Array<String>) {
-    val clientType = AiClientType.YANDEX_GPT
-    //val model = "sonar-pro"
-    val model = "yandexgpt-lite"
+    val clientType = AiClientType.PERPLEXITY
+    val model = "sonar"
+    //val model = "yandexgpt-lite"
 
     println("Консольный чат с $clientType, модель $model")
     println("Введите exit для выхода,\ns: для задания системного промптa")

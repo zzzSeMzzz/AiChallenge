@@ -5,7 +5,7 @@ import core.data.ya.ChatMessage
 import core.network.Client
 import core.network.PerClient
 
-class ClientManager {
+object ClientManager {
 
     private var yaClient: Client? = null
     private var perClient: PerClient? = null

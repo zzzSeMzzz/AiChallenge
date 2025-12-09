@@ -1,19 +1,15 @@
-import core.data.perplexety.PerMessage
+
 import core.network.PerClient
+import core.utils.AiClientType
+import core.utils.ClientManager
 
 suspend fun main(args: Array<String>) {
-    println("Консольный чат с Perplexity")
+    val clientType = AiClientType.PERPLEXITY
+    val model = "sonar"
+
+    println("Консольный чат с $clientType")
     println("Введите exit для выхода,\ns: для задания системного промптa")
 
-    val messages = mutableListOf<PerMessage>()/*.apply {
-        add(PerMessage.system("Ты сценарист"))
-    }*/
-
-    val models = listOf(
-        "sonar",
-        "sonar-pro",
-        "yandexgpt-lite"
-    )
 
     while (true) {
         print("Вы: ")
@@ -26,29 +22,28 @@ suspend fun main(args: Array<String>) {
                 return
             }
             input.startsWith("s:") -> {
-                //remove old system prompt
-                if(messages.firstOrNull()?.role == "system") {
-                    messages.removeAt(0)
-                }
-                messages.add(0, PerMessage.system(input.substring(2).trim()))
+                ClientManager.ask(
+                    client = clientType,
+                    input = input.substring(2).trim(),
+                    model = model,
+                    temperature = 0.3,
+                    isSystemPrompt = true
+                )
                 continue
             }
             else -> {
-                messages.add(PerMessage.user(input))
+                val answer = ClientManager.ask(
+                    client = clientType,
+                    input = input.substring(2).trim(),
+                    model = model,
+                    temperature = 0.3,
+                    isSystemPrompt = false
+                )
+
+                println("Agent: ${answer?.answer()}")
             }
         }
-
-        /*val answer = Client.askYaGpt(
-            messages,
-            temperature = 1.2
-        )*/
-        val answer = PerClient.askPerplexity(
-            messages,
-            temperature = 0.3
-        )
-        println("Agent: ${answer.answer()}")
-
-        // Добавляем ответ модели
-        messages.add(PerMessage.assistant(answer.answer()))
     }
 }
+
+

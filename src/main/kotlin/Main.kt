@@ -1,5 +1,4 @@
 
-import core.network.PerClient
 import core.utils.AiClientType
 import core.utils.ClientManager
 
@@ -19,7 +18,7 @@ suspend fun main(args: Array<String>) {
         when {
             input.lowercase() in listOf("exit", "выход", "quit") -> {
                 println("Чат завершён.")
-                PerClient.close()
+                ClientManager.close()
                 return
             }
             input.startsWith("s:") -> {

@@ -51,9 +51,34 @@ data class Choice(
 )
 
 @Serializable
+data class PerplexityCost(
+    @SerialName("input_tokens_cost")
+    val inputTokensCost: Double,
+    @SerialName("output_tokens_cost")
+    val outputTokensCost: Double,
+    @SerialName("request_cost")
+    val requestCost: Double,
+    @SerialName("total_cost")
+    val totalCost: Double,
+)
+
+@Serializable
+data class PerplexityUsage(
+    @SerialName("prompt_tokens")
+    val promptTokens: Int,
+    @SerialName("completion_tokens")
+    val completionTokens: Int,
+    @SerialName("total_tokens")
+    val totalTokens: Int,
+    @SerialName("cost")
+    val cost: PerplexityCost?,
+)
+
+@Serializable
 data class PerplexityResponse(
     val choices: List<Choice>,
     val id: String? = null,
     val model: String? = null,
-    val created: Long? = null
+    val created: Long? = null,
+    val usage: PerplexityUsage? = null,
 )

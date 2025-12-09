@@ -1,4 +1,3 @@
-
 import core.data.perplexety.PerMessage
 import core.network.PerClient
 
@@ -6,9 +5,15 @@ suspend fun main(args: Array<String>) {
     println("Консольный чат с Perplexity")
     println("Введите exit для выхода,\ns: для задания системного промптa")
 
-    val messages = mutableListOf<PerMessage>().apply {
+    val messages = mutableListOf<PerMessage>()/*.apply {
         add(PerMessage.system("Ты сценарист"))
-    }
+    }*/
+
+    val models = listOf(
+        "sonar-mini",
+        "sonar-small",
+        "sonar-pro"
+    )
 
     while (true) {
         print("Вы: ")

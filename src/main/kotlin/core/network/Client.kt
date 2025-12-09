@@ -5,6 +5,7 @@ import core.SERVER_URL
 import core.data.ya.ChatMessage
 import core.data.ya.YaGptRequest
 import core.data.ya.YaGptResponse
+import core.utils.AiAnswer
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -32,48 +33,29 @@ object Client {
         }*/
     }
 
-    suspend fun askYaGpt(
-        query: String,
-        systemPromptString: String? = null,
-        formatAsJson: Boolean = false
-    ): String {
-        val systemPrompt = systemPromptString?.let {
-            ChatMessage.system(it)
-        }
-
-        return try {
-            val request = YaGptRequest.create(
-                text = query,
-                systemPrompt = systemPrompt,
-                jsonObject = formatAsJson
-            )
-
-            val response = post(request)
-
-            response.result.alternatives.firstOrNull()?.message?.text
-                ?: "Нет ответа от модели."
-        } catch (e: Exception) {
-            "Error: ${e.message}"
-        }
-    }
-
 
     suspend fun askYaGpt(
         messages: List<ChatMessage>, // ← теперь принимаем список сообщений
         temperature: Double = 0.1,
-    ): String {
+        model: String = "yandexgpt-lite",
+    ): AiAnswer {
         return try {
             val request = YaGptRequest.createWithMessages(
                 messages = messages,
                 temperature =  temperature,
+                model = model
             )
-
             val response = post(request)
-
-            response.result.alternatives.firstOrNull()?.message?.text
-                ?: "Нет ответа от модели."
+            //response.result.alternatives.firstOrNull()?.message?.text ?: "Нет ответа от модели."
+            response
         } catch (e: Exception) {
-            "Error: ${e.message}"
+            object : AiAnswer {
+                override fun answer()= "Error: ${e.message}"
+
+                override fun totalTokens() = 0
+
+                override fun totalPrice() = 0.0
+            }
         }
     }
 

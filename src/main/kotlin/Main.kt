@@ -10,9 +10,9 @@ suspend fun main(args: Array<String>) {
     }*/
 
     val models = listOf(
-        "sonar-mini",
-        "sonar-small",
-        "sonar-pro"
+        "sonar",
+        "sonar-pro",
+        "yandexgpt-lite"
     )
 
     while (true) {
@@ -44,11 +44,11 @@ suspend fun main(args: Array<String>) {
         )*/
         val answer = PerClient.askPerplexity(
             messages,
-            temperature = 1.2
+            temperature = 0.3
         )
-        println("Agent: $answer")
+        println("Agent: ${answer.answer()}")
 
         // Добавляем ответ модели
-        messages.add(PerMessage.assistant(answer))
+        messages.add(PerMessage.assistant(answer.answer()))
     }
 }

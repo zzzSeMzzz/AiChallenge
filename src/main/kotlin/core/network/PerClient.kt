@@ -5,6 +5,7 @@ import core.SERVER_URL_PERPLEXITY
 import core.data.perplexety.PerMessage
 import core.data.perplexety.PerplexityRequest
 import core.data.perplexety.PerplexityResponse
+import core.utils.AiAnswer
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -41,20 +42,27 @@ object PerClient {
 
     suspend fun askPerplexity(
         messages: MutableList<PerMessage>,
-        temperature: Double = 0.7,
-        model: String = "sonar-pro"
-    ): String {
+        temperature: Double = 0.4,
+        model: String = "sonar"
+    ): AiAnswer {
         return try {
             val response = post(messages, temperature, model)
-            return response.choices.firstOrNull()?.message?.content ?: "Нет ответа от модели."
+            //return response.choices.firstOrNull()?.message?.content ?: "Нет ответа от модели."
+            response
         } catch (e: Exception) {
-            "Error: ${e.message}"
+            object : AiAnswer {
+                override fun answer()= "Error: ${e.message}"
+
+                override fun totalTokens() = 0
+
+                override fun totalPrice() = 0.0
+            }
         }
     }
 
     private suspend fun post(
         messages: MutableList<PerMessage>,
-        temperature: Double = 0.7,
+        temperature: Double,
         model: String
     ): PerplexityResponse {
         val request = PerplexityRequest(

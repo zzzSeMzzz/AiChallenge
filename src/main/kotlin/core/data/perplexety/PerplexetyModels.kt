@@ -1,5 +1,6 @@
 package core.data.perplexety
 
+import core.utils.AiAnswer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -81,4 +82,10 @@ data class PerplexityResponse(
     val model: String? = null,
     val created: Long? = null,
     val usage: PerplexityUsage? = null,
-)
+) : AiAnswer {
+    override fun answer() = choices.firstOrNull()?.message?.content ?: "Нет ответа от модели."
+
+    override fun totalTokens() = usage?.totalTokens ?: 0
+
+    override fun totalPrice() = usage?.cost?.totalCost ?: 0.0
+}

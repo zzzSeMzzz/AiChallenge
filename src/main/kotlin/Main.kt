@@ -5,8 +5,9 @@ import core.utils.ClientManager
 
 //sonar, sonar-pro, sonar-reasoning, yandexgpt-lite
 suspend fun main(args: Array<String>) {
-    val clientType = AiClientType.PERPLEXITY
-    val model = "sonar-pro"//yandexgpt-lite
+    val clientType = AiClientType.YANDEX_GPT
+    //val model = "sonar-pro"
+    val model = "yandexgpt-lite"
 
     println("Консольный чат с $clientType, модель $model")
     println("Введите exit для выхода,\ns: для задания системного промптa")
@@ -51,7 +52,7 @@ suspend fun main(args: Array<String>) {
                 }
 
                 println("Потребовалось времени: $latencyMs")
-                println("Использовано токенов: ${answer?.totalTokens()}, цена $${answer?.totalPrice()} $currency")
+                println("Использовано токенов: ${answer?.totalTokens()}, цена ${answer?.totalPrice()} $currency")
             }
         }
     }

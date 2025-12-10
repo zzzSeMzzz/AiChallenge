@@ -80,6 +80,8 @@ interface AiAnswer {
     fun answer(): String
     fun totalTokens(): Int
     fun totalPrice(): Double
+    fun completionTokens(): Int
+    fun promptTokens(): Int
 }
 
 enum class AiClientType {

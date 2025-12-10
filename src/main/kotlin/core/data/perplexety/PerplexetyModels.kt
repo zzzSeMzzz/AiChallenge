@@ -88,4 +88,8 @@ data class PerplexityResponse(
     override fun totalTokens() = usage?.totalTokens ?: 0
 
     override fun totalPrice() = usage?.cost?.totalCost ?: 0.0
+
+    override fun completionTokens() = usage?.completionTokens ?: 0
+
+    override fun promptTokens() = usage?.totalTokens ?: 0
 }

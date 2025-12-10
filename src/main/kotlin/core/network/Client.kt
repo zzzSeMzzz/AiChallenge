@@ -57,6 +57,10 @@ object Client {
                 override fun totalTokens() = 0
 
                 override fun totalPrice() = 0.0
+
+                override fun completionTokens() = 0
+
+                override fun promptTokens() = 0
             }
         }
     }

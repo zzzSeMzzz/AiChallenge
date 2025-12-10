@@ -13,6 +13,10 @@ data class YaGptResponse(
     override fun totalTokens() = result.usage?.totalTokens?.toIntOrNull() ?: 0
 
     override fun totalPrice() = result.usage?.calcCost() ?: 0.0
+
+    override fun completionTokens() = result.usage?.completionTokens?.toIntOrNull() ?: 0
+
+    override fun promptTokens() = result.usage?.inputTextTokens?.toIntOrNull() ?: 0
 }
 
 @Serializable

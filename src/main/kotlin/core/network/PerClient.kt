@@ -56,6 +56,10 @@ object PerClient {
 
                 override fun totalTokens() = 0
 
+                override fun completionTokens() = 0
+
+                override fun promptTokens() = 0
+
                 override fun totalPrice() = 0.0
             }
         }
@@ -86,6 +90,6 @@ object PerClient {
     fun close() {
         try {
             client.close()
-        } catch (e: Exception) { }
+        } catch (ignored: Exception) { }
     }
 }

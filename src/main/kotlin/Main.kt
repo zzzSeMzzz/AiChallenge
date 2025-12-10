@@ -35,10 +35,9 @@ suspend fun main(args: Array<String>) {
                 continue
             }
             else -> {
-                val tStart = System.nanoTime()
                 val answer = ClientManager.ask(
                     client = clientType,
-                    input = input.substring(2).trim(),
+                    input = input,
                     model = model,
                     temperature = 0.3,
                     isSystemPrompt = false,

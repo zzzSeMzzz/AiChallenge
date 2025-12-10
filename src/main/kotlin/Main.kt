@@ -44,18 +44,10 @@ suspend fun main(args: Array<String>) {
                     isSystemPrompt = false,
                     maxTokens = maxTokens,
                 )
-                val tEnd = System.nanoTime()
-                val latencyMs = (tEnd - tStart) / 1_000_000
 
                 println("Agent: ${answer?.answer()}")
 
-                val currency = when (clientType) {
-                    AiClientType.YANDEX_GPT ->  "руб."
-                    else -> "$"
-                }
-
-                println("Потребовалось времени: $latencyMs")
-                println("Использовано токенов: ${answer?.totalTokens()}, цена ${answer?.totalPrice()} $currency")
+                println("Промпт токенов: ${answer?.promptTokens()}, completion токенов ${answer?.completionTokens()}")
             }
         }
     }

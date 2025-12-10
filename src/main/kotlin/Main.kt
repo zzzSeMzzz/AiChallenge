@@ -10,7 +10,7 @@ suspend fun main(args: Array<String>) {
     val model = "yandexgpt-lite"
     val maxTokens = 300
 
-    println("Консольный чат с $clientType, модель $model")
+    println("Консольный чат с $clientType, модель $model, maxTokens $maxTokens")
     println("Введите exit для выхода,\ns: для задания системного промптa")
 
 

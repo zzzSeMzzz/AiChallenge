@@ -8,7 +8,7 @@ suspend fun main(args: Array<String>) {
     val clientType = AiClientType.YANDEX_GPT
     //val model = "sonar"
     val model = "yandexgpt-lite"
-    val maxTokens = 300
+    val maxTokens = 250
 
     println("Консольный чат с $clientType, модель $model, maxTokens $maxTokens")
     println("Введите exit для выхода,\ns: для задания системного промптa")

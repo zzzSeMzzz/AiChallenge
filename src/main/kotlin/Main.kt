@@ -8,6 +8,7 @@ suspend fun main(args: Array<String>) {
     val clientType = AiClientType.YANDEX_GPT
     //val model = "sonar"
     val model = "yandexgpt-lite"
+    val maxTokens = 300
 
     println("Консольный чат с $clientType, модель $model")
     println("Введите exit для выхода,\ns: для задания системного промптa")
@@ -28,7 +29,8 @@ suspend fun main(args: Array<String>) {
                     input = input.substring(2).trim(),
                     model = model,
                     temperature = 0.3,
-                    isSystemPrompt = true
+                    isSystemPrompt = true,
+                    maxTokens = maxTokens,
                 )
                 continue
             }
@@ -39,7 +41,8 @@ suspend fun main(args: Array<String>) {
                     input = input.substring(2).trim(),
                     model = model,
                     temperature = 0.3,
-                    isSystemPrompt = false
+                    isSystemPrompt = false,
+                    maxTokens = maxTokens,
                 )
                 val tEnd = System.nanoTime()
                 val latencyMs = (tEnd - tStart) / 1_000_000

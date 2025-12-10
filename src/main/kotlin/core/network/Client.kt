@@ -38,12 +38,14 @@ object Client {
         messages: List<ChatMessage>, // ← теперь принимаем список сообщений
         temperature: Double = 0.1,
         model: String = "yandexgpt-lite",
+        maxTokens: Int = 512
     ): AiAnswer {
         return try {
             val request = YaGptRequest.createWithMessages(
                 messages = messages,
                 temperature =  temperature,
-                model = model
+                model = model,
+                maxTokens = maxTokens.toString()
             )
             val response = post(request)
             //response.result.alternatives.firstOrNull()?.message?.text ?: "Нет ответа от модели."

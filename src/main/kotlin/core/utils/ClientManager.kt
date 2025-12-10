@@ -22,7 +22,8 @@ object ClientManager {
         input: String,
         isSystemPrompt: Boolean = false,
         model: String? = null,
-        temperature: Double = 0.4
+        temperature: Double = 0.4,
+        maxTokens: Int = 512,
     ): AiAnswer? {
         return when (client) {
             AiClientType.PERPLEXITY -> {
@@ -39,6 +40,7 @@ object ClientManager {
                     messages = messagesPer,
                     temperature = temperature,
                     model = model ?: "sonar",
+                    maxTokens = maxTokens,
                 )
                 messagesPer.add(PerMessage.assistant(answer.answer()))
                 answer
@@ -58,6 +60,7 @@ object ClientManager {
                     messages = messagesYa,
                     temperature = temperature,
                     model = model ?: "yandexgpt-lite",
+                    maxTokens = maxTokens,
                 )
 
                 messagesYa.add(ChatMessage.assistant(answer.answer()))

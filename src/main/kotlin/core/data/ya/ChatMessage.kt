@@ -47,7 +47,7 @@ data class YaGptRequest(
             steaming: Boolean = false,
             temperature: Double,  // Низкая для детерминизма [web:22]
             model: String,
-            maxTokens: String = "100"
+            maxTokens: String = "1024"
         ): YaGptRequest {
 
             return YaGptRequest(

@@ -56,7 +56,7 @@ suspend fun main(args: Array<String>) {
                 val answer = llmClient.chat(context)
 
                 println("Agent: ${answer?.answer()}")
-                //println("Промпт токенов: ${answer?.promptTokens()}, completion: ${answer?.completionTokens()}")
+                println("Промпт токенов: ${answer?.promptTokens()}, completion: ${answer?.completionTokens()}")
 
                 // ✅ Сохраняем ответ в память
                 chatMemory.addAssistantMessage(answer?.answer() ?: "")

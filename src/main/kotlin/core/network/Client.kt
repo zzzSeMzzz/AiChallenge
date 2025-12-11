@@ -2,7 +2,7 @@ package core.network
 
 import core.BuildConfig
 import core.SERVER_URL
-import core.data.ya.ChatMessage
+import core.data.ya.YaMessage
 import core.data.ya.YaGptRequest
 import core.data.ya.YaGptResponse
 import core.utils.AiAnswer
@@ -35,7 +35,7 @@ object Client {
 
 
     suspend fun askYaGpt(
-        messages: List<ChatMessage>, // ← теперь принимаем список сообщений
+        messages: List<YaMessage>, // ← теперь принимаем список сообщений
         temperature: Double = 0.1,
         model: String = "yandexgpt-lite",
         maxTokens: Int = 512

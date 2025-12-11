@@ -41,7 +41,7 @@ object PerClient {
 
 
     suspend fun askPerplexity(
-        messages: MutableList<PerMessage>,
+        messages: List<PerMessage>,
         temperature: Double = 0.4,
         model: String = "sonar",
         maxTokens: Int = 512
@@ -66,7 +66,7 @@ object PerClient {
     }
 
     private suspend fun post(
-        messages: MutableList<PerMessage>,
+        messages: List<PerMessage>,
         temperature: Double,
         model: String,
         maxTokens: Int

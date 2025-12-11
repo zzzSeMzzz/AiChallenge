@@ -27,7 +27,7 @@ data class Result(
 
 @Serializable
 data class Alternative(
-    val message: ChatMessage,
+    val message: YaMessage,
     val status: String?
 )
 

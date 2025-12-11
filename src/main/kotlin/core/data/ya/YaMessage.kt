@@ -4,16 +4,16 @@ import core.BuildConfig
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ChatMessage(
+data class YaMessage(
     val role: String,
     val text: String
 ) {
     companion object {
-        fun system(text: String) = ChatMessage("system", text)
+        fun system(text: String) = YaMessage("system", text)
 
-        fun assistant(text: String) = ChatMessage("assistant", text)
+        fun assistant(text: String) = YaMessage("assistant", text)
 
-        fun user(text: String) = ChatMessage("user", text)
+        fun user(text: String) = YaMessage("user", text)
     }
 }
 
@@ -22,17 +22,17 @@ data class YaGptRequest(
     val modelUri: String,
     val jsonObject: Boolean?,
     val completionOptions: CompletionOptions,
-    val messages: List<ChatMessage>,
+    val messages: List<YaMessage>,
 ) {
     companion object {
         fun create(
             text: String,
-            systemPrompt: ChatMessage? = null,
+            systemPrompt: YaMessage? = null,
             jsonObject: Boolean? = null,
             steaming: Boolean = false,
         ): YaGptRequest {
-           val messages = mutableListOf<ChatMessage>()
-           messages.add(ChatMessage("user", text))
+           val messages = mutableListOf<YaMessage>()
+           messages.add(YaMessage("user", text))
            systemPrompt?.let { messages.add(it) }
            return YaGptRequest(
                modelUri = "gpt://${BuildConfig.CLOUD_FOLDER}/yandexgpt",//-lite
@@ -43,7 +43,7 @@ data class YaGptRequest(
         }
 
         fun createWithMessages(
-            messages: List<ChatMessage>,
+            messages: List<YaMessage>,
             steaming: Boolean = false,
             temperature: Double,  // Низкая для детерминизма [web:22]
             model: String,

@@ -1,6 +1,10 @@
 
+import core.data.base.ChatMessage
+import core.data.base.LlmClient
+import core.utils.AiAnswer
 import core.utils.AiClientType
 import core.utils.ClientManager
+import core.utils.CompressedChatMemory
 
 
 //sonar, sonar-pro, sonar-reasoning, yandexgpt-lite
@@ -13,6 +17,22 @@ suspend fun main(args: Array<String>) {
     println("Консольный чат с $clientType, модель $model, maxTokens $maxTokens")
     println("Введите exit для выхода,\ns: для задания системного промптa")
 
+    var systemPrompt: String? = null
+
+    val llmClient = object : LlmClient {
+        override suspend fun chat(messages: List<ChatMessage>): AiAnswer? {
+            return ClientManager.ask(
+                client = clientType,
+                messages = messages,
+                model = model,
+                temperature = 0.3,
+                maxTokens = maxTokens,
+            )
+        }
+
+    }
+
+    val chatMemory = CompressedChatMemory(llmClient)
 
     while (true) {
         print("Вы: ")
@@ -20,33 +40,27 @@ suspend fun main(args: Array<String>) {
         when {
             input.lowercase() in listOf("exit", "выход", "quit") -> {
                 println("Чат завершён.")
+                println("Создано summaries: ${chatMemory.summaryCount}")
                 ClientManager.close()
                 return
             }
             input.startsWith("s:") -> {
-                ClientManager.ask(
-                    client = clientType,
-                    input = input.substring(2).trim(),
-                    model = model,
-                    temperature = 0.3,
-                    isSystemPrompt = true,
-                    maxTokens = maxTokens,
-                )
+                systemPrompt = input.substring(2).trim()
+                println("Системный промпт установлен")
                 continue
             }
             else -> {
-                val answer = ClientManager.ask(
-                    client = clientType,
-                    input = input,
-                    model = model,
-                    temperature = 0.3,
-                    isSystemPrompt = false,
-                    maxTokens = maxTokens,
-                )
+                chatMemory.addUserMessage(input)
+                // ✅ Строим сжатый контекст
+                val context = chatMemory.buildContext(systemPrompt)
+                val answer = llmClient.chat(context)
 
                 println("Agent: ${answer?.answer()}")
+                //println("Промпт токенов: ${answer?.promptTokens()}, completion: ${answer?.completionTokens()}")
 
-                println("Промпт токенов: ${answer?.promptTokens()}, completion токенов ${answer?.completionTokens()}")
+                // ✅ Сохраняем ответ в память
+                chatMemory.addAssistantMessage(answer?.answer() ?: "")
+                println("---")
             }
         }
     }

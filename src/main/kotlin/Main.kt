@@ -32,7 +32,10 @@ suspend fun main(args: Array<String>) {
 
     }
 
-    val chatMemory = CompressedChatMemory(llmClient)
+    val chatMemory = CompressedChatMemory(
+        llmClient,
+        summaryEveryN = 7
+    )
 
     while (true) {
         print("Вы: ")
@@ -56,7 +59,7 @@ suspend fun main(args: Array<String>) {
                 val answer = llmClient.chat(context)
 
                 println("Agent: ${answer?.answer()}")
-                println("Промпт токенов: ${answer?.promptTokens()}, completion: ${answer?.completionTokens()}")
+                println("Промпт токенов: ${answer?.promptTokens()}, completion: ${answer?.completionTokens()}, всего: ${answer?.totalTokens()}")
 
                 // ✅ Сохраняем ответ в память
                 chatMemory.addAssistantMessage(answer?.answer() ?: "")

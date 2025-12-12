@@ -29,12 +29,11 @@ suspend fun main(args: Array<String>) {
                 maxTokens = maxTokens,
             )
         }
-
     }
 
     val chatMemory = CompressedChatMemory(
         llmClient,
-        summaryEveryN = 7
+        summaryEveryN = 10
     )
 
     while (true) {
@@ -50,6 +49,16 @@ suspend fun main(args: Array<String>) {
             input.startsWith("s:") -> {
                 systemPrompt = input.substring(2).trim()
                 println("Системный промпт установлен")
+                continue
+            }
+            input == "st:" -> {
+                println("=== СТАТИСТИКА СЖАТИЯ ===")
+                println("Summaries: ${chatMemory.summaryCount}")
+                println("Текущая история: ${chatMemory.recentCount} сообщений")
+                chatMemory.getLastSummary()?.let {
+                    println("Последний summary: $it")
+                }
+                println("---")
                 continue
             }
             else -> {

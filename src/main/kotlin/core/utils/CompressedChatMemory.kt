@@ -1,22 +1,29 @@
 package core.utils
 
-import core.data.base.ChatMessage
-import core.data.base.LlmClient
-import core.data.base.Role
+import core.data.base.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.io.File
 
 class CompressedChatMemory(
     private val llmClient: LlmClient,
-    private val summaryEveryN: Int = 10
+    private val summaryEveryN: Int = 10,
+    private val summaryFile: File = File("chat_summaries.json"),
 ) {
-    private val summaries = mutableListOf<String>()
+    private val summaries = mutableListOf<SerializableSummary>()
     private val recentMessages = mutableListOf<ChatMessage>()
+    private var nextSummaryId: Long = 1L
+
+    init {
+        loadFromFileIfExists()
+    }
 
     fun addUserMessage(text: String) {
-        recentMessages.add(ChatMessage(Role.USER, text))
+        recentMessages += ChatMessage(Role.USER, text)
     }
 
     fun addAssistantMessage(text: String) {
-        recentMessages.add(ChatMessage(Role.ASSISTANT, text))
+        recentMessages += ChatMessage(Role.ASSISTANT,text)
     }
 
     suspend fun buildContext(systemPrompt: String?): List<ChatMessage> {
@@ -24,19 +31,19 @@ class CompressedChatMemory(
 
         val context = mutableListOf<ChatMessage>()
 
-        // Системный промпт
         systemPrompt?.let {
-            context.add(ChatMessage(Role.SYSTEM, it))
+            context += ChatMessage(Role.SYSTEM, it)
         }
 
-        // Последний summary как системный контекст
-        val summary = summaries.lastOrNull()
-        summary?.let {
-            context.add(ChatMessage(Role.SYSTEM, "Предыдущий контекст диалога: $it"))
+        val lastSummary = summaries.lastOrNull()
+        if (lastSummary != null) {
+            context += ChatMessage(
+                Role.SYSTEM,
+                "Краткое резюме предыдущего диалога: ${lastSummary.text}"
+            )
         }
 
-        // Последние 15 сырых сообщений
-        context.addAll(recentMessages.takeLast(15))
+        context += recentMessages.takeLast(15)
 
         return context
     }
@@ -44,24 +51,58 @@ class CompressedChatMemory(
     // Публичные геттеры для статистики
     val summaryCount: Int get() = summaries.size
     val recentCount: Int get() = recentMessages.size
-    fun getLastSummary(): String? = summaries.lastOrNull()
+    fun getLastSummary(): String? = summaries.lastOrNull()?.text
 
     private suspend fun maybeSummarizeIfNeeded() {
         if (recentMessages.size < summaryEveryN) return
 
         val historyText = recentMessages.joinToString("\n") { "${it.role}: ${it.content}" }
+
         val summaryPrompt = listOf(
-            ChatMessage(Role.SYSTEM, """
-                Создай КРАТКОЕ резюме диалога (2-4 предложения, max 100 слов).
-                Сохрани: цели пользователя, ключевые факты, открытые задачи, имена/даты.
-                Только факты в связной форме, без "Пользователь спросил...".
-            """.trimIndent()),
+            ChatMessage(
+                Role.SYSTEM,
+                """
+                Создай КРАТКОЕ резюме диалога (2–4 предложения, до 100 слов).
+                Сохрани цели пользователя, важные факты и незавершённые задачи.
+                Пиши связным текстом, без "Пользователь спросил...".
+                """.trimIndent()
+            ),
             ChatMessage(Role.USER, "Диалог:\n$historyText")
         )
 
-        val summaryAnswer = llmClient.chat(summaryPrompt)
-        val summary = summaryAnswer?.answer() ?: "Не удалось суммировать"
-        summaries.add(summary)
+        val answer = llmClient.chat(summaryPrompt)
+        val summaryText = answer?.answer() ?: return
+
+        val summary = SerializableSummary(id = nextSummaryId++, text = summaryText)
+        summaries += summary
         recentMessages.clear()
+
+        saveToFileSafe()
+    }
+
+    private fun saveToFileSafe() {
+        try {
+            val state = SerializableMemoryState(
+                summaries = summaries.toList(),
+                lastSummaryId = nextSummaryId
+            )
+            val json = Json.encodeToString(state) // -> String [web:27][web:28]
+            summaryFile.writeText(json)
+        } catch (_: Exception) {
+            // можно залогировать
+        }
+    }
+
+    private fun loadFromFileIfExists() {
+        if (!summaryFile.exists()) return
+        try {
+            val json = summaryFile.readText()          // [web:33][web:36]
+            val state = Json.decodeFromString<SerializableMemoryState>(json)
+            summaries.clear()
+            summaries += state.summaries
+            nextSummaryId = state.lastSummaryId
+        } catch (_: Exception) {
+            // файл битый — игнорируем
+        }
     }
 }

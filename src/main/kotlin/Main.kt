@@ -1,15 +1,19 @@
 
-import core.data.base.ChatMessage
-import core.data.base.LlmClient
-import core.utils.AiAnswer
-import core.utils.AiClientType
-import core.utils.ClientManager
-import core.utils.CompressedChatMemory
+
+import io.modelcontextprotocol.kotlin.sdk.client.Client
+import io.modelcontextprotocol.kotlin.sdk.client.StdioClientTransport
+
+import io.modelcontextprotocol.kotlin.sdk.types.Implementation
+import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
+import kotlinx.io.asSink
+import kotlinx.io.asSource
+import kotlinx.io.buffered
+import java.io.File
 
 
 //sonar, sonar-pro, sonar-reasoning, yandexgpt-lite
 suspend fun main(args: Array<String>) {
-    val clientType = AiClientType.YANDEX_GPT
+   /* val clientType = AiClientType.YANDEX_GPT
     //val model = "sonar"
     val model = "yandexgpt-lite"
     val maxTokens = 1000
@@ -75,7 +79,45 @@ suspend fun main(args: Array<String>) {
                 println("---")
             }
         }
+    }*/
+
+    val process = ProcessBuilder(
+        "node",
+        File("D:/asemchenko/lessons/ai/index.js").absolutePath  // поправь путь при необходимости
+    )
+        .directory(File("D:/asemchenko/lessons/ai"))
+        .redirectError(ProcessBuilder.Redirect.INHERIT)
+        .start()
+
+    // 2. Транспорт поверх stdio процесса
+    val transport = StdioClientTransport(
+        input = process.inputStream.asSource().buffered(),   // stdout сервера
+        output = process.outputStream.asSink().buffered() // stdin сервера
+    )
+
+    // 3. Создаём MCP‑клиент
+    val client = Client(
+        clientInfo = Implementation(
+            name = "kotlin-mcp-client",
+            version = "0.1.0"
+        )
+    )
+
+    // 4. Подключаемся
+    client.connect(transport)
+
+    // сгенерённый API‑класс для tools
+    val toolsResult = client.listTools()
+    val tools = toolsResult.tools
+
+    println("Доступные MCP-инструменты:")
+    tools.forEach { tool ->
+        println("- ${tool.name}: ${tool.description}")
     }
+
+    // 6. Закрываемся
+    client.close()
+    process.destroy()
 }
 
 

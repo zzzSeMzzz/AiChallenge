@@ -74,6 +74,9 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:3.0.2")
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.0.2")
 
+    implementation("io.modelcontextprotocol:kotlin-sdk:0.8.1")
+    implementation("io.modelcontextprotocol:kotlin-sdk-client:0.8.1")
+
     // Kotlinx serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 

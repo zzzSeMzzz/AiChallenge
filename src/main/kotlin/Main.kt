@@ -2,17 +2,16 @@
 
 import io.modelcontextprotocol.kotlin.sdk.client.Client
 import io.modelcontextprotocol.kotlin.sdk.client.StdioClientTransport
-
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
-import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
-import java.io.File
 
 
 //sonar, sonar-pro, sonar-reasoning, yandexgpt-lite
-suspend fun main(args: Array<String>) {
+suspend fun main(args: Array<String>) = runBlocking {
    /* val clientType = AiClientType.YANDEX_GPT
     //val model = "sonar"
     val model = "yandexgpt-lite"
@@ -81,13 +80,17 @@ suspend fun main(args: Array<String>) {
         }
     }*/
 
+    println("Старт клиента")
+
     val process = ProcessBuilder(
-        "node",
-        File("D:/asemchenko/lessons/ai/index.js").absolutePath  // поправь путь при необходимости
+        "java",
+        "-jar",
+        "D:/projects/java/AiChallenge/server/build/libs/MPCServer-1.0-SNAPSHOT.jar"
     )
-        .directory(File("D:/asemchenko/lessons/ai"))
         .redirectError(ProcessBuilder.Redirect.INHERIT)
         .start()
+
+    println("Серверный процесс запущен, pid=${process.pid()}")
 
     // 2. Транспорт поверх stdio процесса
     val transport = StdioClientTransport(
@@ -103,21 +106,49 @@ suspend fun main(args: Array<String>) {
         )
     )
 
-    // 4. Подключаемся
-    client.connect(transport)
+// 💡 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Создаем Job для отслеживания жизненного цикла сессии
+    val sessionJob = Job()
 
-    // сгенерённый API‑класс для tools
-    val toolsResult = client.listTools()
-    val tools = toolsResult.tools
+    try {
+        client.connect(transport)
 
-    println("Доступные MCP-инструменты:")
-    tools.forEach { tool ->
-        println("- ${tool.name}: ${tool.description}")
+        // Регистрируем колбэк, который завершит наш Job, когда сервер закроет сессию
+        // (хотя клиентский SDK может не иметь прямого onClose колбэка для Client/Transport,
+        // клиент обычно управляет закрытием сам, поэтому мы используем finally)
+
+        val toolsResult = client.listTools()
+        val tools = toolsResult.tools
+
+        println("Доступные MCP-инструменты:")
+        tools.forEach { tool ->
+            println("- ${tool.name}: ${tool.description}")
+        }
+
+        // --- Здесь ваша программа завершает свою работу, что приводит к ошибке ---
+        // Если вы хотите, чтобы она работала дольше, вам нужно интерактивное взаимодействие
+        // (как в закомментированном чате в вашем первом примере)
+
+    } finally {
+        // Гарантированное закрытие клиента, которое ДОЛЖНО инициировать
+        // отправку сигнала onClose серверу.
+        println("Отправляем сигнал закрытия клиенту...")
+        client.close()
+
+        // 💡 ВАЖНО: Ждем, пока процесс сервера завершится САМ,
+        // получив сигнал onClose от нашего client.close().
+        // Не вызываем process.destroy() сразу!
+
+        if (process.isAlive) {
+            println("Ожидаем чистого завершения серверного процесса...")
+            // process.waitFor() блокирует поток, что подходит в runBlocking
+            process.waitFor()
+            println("Серверный процесс завершился.")
+        }
+
+        // process.destroy() теперь можно вызвать просто как подстраховку,
+        // но он уже должен быть не нужен.
+        // process.destroy()
     }
-
-    // 6. Закрываемся
-    client.close()
-    process.destroy()
 }
 
 

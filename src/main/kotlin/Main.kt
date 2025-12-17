@@ -15,22 +15,22 @@ import io.modelcontextprotocol.kotlin.sdk.types.LoggingMessageNotification
 import io.modelcontextprotocol.kotlin.sdk.types.Method
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import java.io.File
 import java.time.Instant
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
-suspend fun main() = runBlocking {
+suspend fun main()  {
     val logger = Logger.getLogger("McpAgent")
-    val clientType = AiClientType.PERPLEXITY
-    val model = "sonar"
-    // val model = "yandexgpt-lite"
+    val clientType = AiClientType.YANDEX_GPT
+    //val model = "sonar"
+    val model = "yandexgpt-lite"
     val maxTokens = 1000
 
     // ✅ Дефолтный системный промпт
@@ -73,6 +73,7 @@ suspend fun main() = runBlocking {
     val process = ProcessBuilder(
         "java", "-jar", "D:/projects/java/AiChallenge/server/build/libs/MPCServer-1.0-SNAPSHOT.jar"
     ).redirectError(ProcessBuilder.Redirect.INHERIT)
+        .directory(File("D:/projects/java/AiChallenge/data"))
         .start()
 
     val transport = StdioClientTransport(
@@ -81,6 +82,22 @@ suspend fun main() = runBlocking {
     )
 
     val mcpClient = Client(Implementation("kotlin-mcp-client", "1.0.0"))
+
+    mcpClient.setNotificationHandler<LoggingMessageNotification>(
+        method = Method.Defined.NotificationsMessage
+    ) { notification ->
+        println("CLIENT: got logging/message")        // должен появляться в консоли
+        CompletableDeferred<Unit>().apply {
+            val msg = notification.params.data.jsonObject["message"]?.jsonPrimitive?.content
+            println("CLIENT: raw data = ${notification.params.data}")  // для отладки
+            if (!msg.isNullOrBlank()) {
+                println("\n🔔 REMINDER [${notification.params.level}]:\n$msg\n---")
+            }
+            complete(Unit)
+        }
+    }
+
+
 
     try {
         mcpClient.connect(transport)
@@ -91,22 +108,9 @@ suspend fun main() = runBlocking {
         println("⚠️ MCP-сервер недоступен. Будет работать без инструментов.")
     }
 
-
-    mcpClient.setNotificationHandler<LoggingMessageNotification>(
-        method = Method.Defined.NotificationsMessage
-    ) { notification ->
-        CompletableDeferred<Unit>().apply {
-            val msg = notification.params.data.jsonObject["message"]?.jsonPrimitive?.content
-            if (!msg.isNullOrBlank()) {
-                println("\n🔔 REMINDER [${notification.params.level}]:\n$msg\n---")
-            }
-            complete(Unit)
-        }
-    }
-
     while (true) {
         print("Вы: ")
-        val input = readlnOrNull()?.trim() ?: continue
+        val input = readlnOrNull()?.trim() ?: break
 
         when {
             input.lowercase() in listOf("exit", "выход", "quit") -> {
@@ -115,7 +119,7 @@ suspend fun main() = runBlocking {
                 ClientManager.close()
                 mcpClient.close()
                 process.destroyForcibly().waitFor()
-                return@runBlocking
+                return
             }
             input.startsWith("s:") -> {
                 systemPrompt = input.substring(2).trim()

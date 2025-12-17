@@ -1,3 +1,3 @@
 package core.data.base
 
-enum class Role { SYSTEM, USER, ASSISTANT }
+enum class Role { SYSTEM, USER, ASSISTANT, TOOL }

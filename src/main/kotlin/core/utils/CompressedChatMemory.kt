@@ -1,7 +1,6 @@
 package core.utils
 
 import core.data.base.*
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 
@@ -24,6 +23,14 @@ class CompressedChatMemory(
 
     fun addAssistantMessage(text: String) {
         recentMessages += ChatMessage(Role.ASSISTANT,text)
+    }
+
+    fun addAssistantMessage(content: String, toolCalls: List<ToolCall>? = null) {
+        recentMessages.add(ChatMessage(Role.ASSISTANT, content, toolCalls = toolCalls))
+    }
+
+    fun addToolMessage(toolCallId: String, content: String) {
+        recentMessages.add(ChatMessage(Role.TOOL, content, toolCallId = toolCallId))
     }
 
     suspend fun buildContext(systemPrompt: String?): List<ChatMessage> {

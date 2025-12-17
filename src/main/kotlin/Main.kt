@@ -1,3 +1,5 @@
+
+
 import core.data.base.ChatMessage
 import core.data.base.FunctionCall
 import core.data.base.LlmClient
@@ -18,17 +20,6 @@ import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
-val defaultSystemPrompt = """
-    Ты — ассистент, который помогает с погодой.
-    Если пользователь спрашивает о погоде в городе — НЕ ОТВЕЧАЙ САМ.
-    Вместо этого, вызови инструмент: get_forecast(latitude=..., longitude=...).
-    Используй реальные координаты:
-      - Москва: latitude=55.7558, longitude=37.6176
-      - Лондон: latitude=51.5074, longitude=-0.1278
-      - Париж: latitude=48.8566, longitude=2.3522
-    Пример вызова: get_forecast(latitude=55.7558, longitude=37.6176)
-""".trimIndent()
-
 suspend fun main() = runBlocking {
     val logger = Logger.getLogger("McpAgent")
     val clientType = AiClientType.PERPLEXITY
@@ -36,10 +27,25 @@ suspend fun main() = runBlocking {
     // val model = "yandexgpt-lite"
     val maxTokens = 1000
 
-    println("Консольный чат с $clientType, модель $model, maxTokens $maxTokens")
-    println("Введите exit для выхода,\ns: для задания системного промптa")
+    // ✅ Дефолтный системный промпт
+    val defaultSystemPrompt = """
+        Ты — ассистент, который помогает с погодой.
+        Если пользователь спрашивает о погоде в городе — НЕ ОТВЕЧАЙ САМ.
+        Вместо этого, вызови инструмент: get_forecast(latitude=..., longitude=...).
+        Используй реальные координаты:
+          - Москва: latitude=55.7558, longitude=37.6176
+          - Лондон: latitude=51.5074, longitude=-0.1278
+          - Париж: latitude=48.8566, longitude=2.3522
+        Пример вызова: get_forecast(latitude=55.7558, longitude=37.6176)
+    """.trimIndent()
 
     var systemPrompt: String? = defaultSystemPrompt
+
+    println("Консольный чат с $clientType, модель $model, maxTokens $maxTokens")
+    println("Системный промпт по умолчанию установлен:")
+    println(" > ${defaultSystemPrompt.lines().first()}...")
+    println("Введите exit для выхода,")
+    println("s: для замены системного промпта")
 
     val llmClient = object : LlmClient {
         override suspend fun chat(messages: List<ChatMessage>): AiAnswer? {
@@ -124,6 +130,7 @@ suspend fun main() = runBlocking {
                     val (lat, lon) = when {
                         input.contains("москва", ignoreCase = true) -> 55.7558 to 37.6176
                         input.contains("лондон", ignoreCase = true) -> 51.5074 to -0.1278
+                        input.contains("париж", ignoreCase = true) -> 48.8566 to 2.3522
                         else -> 55.0 to 37.0
                     }
 

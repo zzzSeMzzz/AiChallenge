@@ -131,7 +131,7 @@ suspend fun main() = runBlocking {
                         input.contains("москва", ignoreCase = true) -> 55.7558 to 37.6176
                         input.contains("лондон", ignoreCase = true) -> 51.5074 to -0.1278
                         input.contains("париж", ignoreCase = true) -> 48.8566 to 2.3522
-                        else -> 55.0 to 37.0
+                        else -> 55.7558 to 37.6176
                     }
 
                     val args = mapOf("latitude" to lat, "longitude" to lon)

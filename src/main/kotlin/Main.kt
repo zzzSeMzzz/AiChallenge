@@ -11,11 +11,17 @@ import core.utils.CompressedChatMemory
 import io.modelcontextprotocol.kotlin.sdk.client.Client
 import io.modelcontextprotocol.kotlin.sdk.client.StdioClientTransport
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
+import io.modelcontextprotocol.kotlin.sdk.types.LoggingMessageNotification
+import io.modelcontextprotocol.kotlin.sdk.types.Method
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import java.time.Instant
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -29,7 +35,6 @@ suspend fun main() = runBlocking {
 
     // ✅ Дефолтный системный промпт
     val defaultSystemPrompt = """
-        Ты — ассистент, который помогает с погодой.
         Если пользователь спрашивает о погоде в городе — НЕ ОТВЕЧАЙ САМ.
         Вместо этого, вызови инструмент: get_forecast(latitude=..., longitude=...).
         Используй реальные координаты:
@@ -86,6 +91,19 @@ suspend fun main() = runBlocking {
         println("⚠️ MCP-сервер недоступен. Будет работать без инструментов.")
     }
 
+
+    mcpClient.setNotificationHandler<LoggingMessageNotification>(
+        method = Method.Defined.NotificationsMessage
+    ) { notification ->
+        CompletableDeferred<Unit>().apply {
+            val msg = notification.params.data.jsonObject["message"]?.jsonPrimitive?.content
+            if (!msg.isNullOrBlank()) {
+                println("\n🔔 REMINDER [${notification.params.level}]:\n$msg\n---")
+            }
+            complete(Unit)
+        }
+    }
+
     while (true) {
         print("Вы: ")
         val input = readlnOrNull()?.trim() ?: continue
@@ -110,6 +128,50 @@ suspend fun main() = runBlocking {
                 println("Текущая история: ${chatMemory.recentCount} сообщений")
                 chatMemory.getLastSummary()?.let {
                     println("Последний summary: $it")
+                }
+                println("---")
+                continue
+            }
+            input.startsWith("radd ") -> {
+                val text = input.removePrefix("radd ").trim()
+                val due = Instant.now().plusSeconds(1 * 60) // +5 минут
+                val args = mapOf(
+                    "text" to text,
+                    "due_at" to due.toString()
+                )
+                try {
+                    val result = mcpClient.callTool("add_reminder", args)
+                    val out = result.content.joinToString("\n") { (it as TextContent).text }
+                    println("📝 Reminder: $out")
+                } catch (e: Exception) {
+                    println("❌ Ошибка add_reminder: ${e.message}")
+                }
+                println("---")
+                continue
+            }
+            input == "rlist" -> {
+                try {
+                    val result = mcpClient.callTool("list_reminders", emptyMap<String, Any>())
+                    val out = result.content.joinToString("\n") { (it as TextContent).text }
+                    println("📋 Reminders:\n$out")
+                } catch (e: Exception) {
+                    println("❌ Ошибка list_reminders: ${e.message}")
+                }
+                println("---")
+                continue
+            }
+            input.startsWith("rdone ") -> {
+                val id = input.removePrefix("rdone ").trim().toLongOrNull()
+                if (id == null) {
+                    println("Нужно число: rdone <id>")
+                    continue
+                }
+                try {
+                    val result = mcpClient.callTool("complete_reminder", mapOf("id" to id))
+                    val out = result.content.joinToString("\n") { (it as TextContent).text }
+                    println("✅ $out")
+                } catch (e: Exception) {
+                    println("❌ Ошибка complete_reminder: ${e.message}")
                 }
                 println("---")
                 continue
@@ -166,7 +228,8 @@ suspend fun main() = runBlocking {
                         println("❌ Ошибка вызова MCP: ${e.message}")
                         chatMemory.addAssistantMessage("Извините, не удалось получить данные о погоде.")
                     }
-                } else {
+                }
+                else {
                     println("Agent: $response")
                     println("Промпт токенов: ${answer?.promptTokens()}, completion: ${answer?.completionTokens()}, всего: ${answer?.totalTokens()}")
                     chatMemory.addAssistantMessage(response)

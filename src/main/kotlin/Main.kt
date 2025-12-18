@@ -1,32 +1,16 @@
 
 
 import core.data.base.ChatMessage
-import core.data.base.FunctionCall
 import core.data.base.LlmClient
-import core.data.base.ToolCall
-import core.utils.AiAnswer
-import core.utils.AiClientType
-import core.utils.ClientManager
-import core.utils.CompressedChatMemory
-import io.modelcontextprotocol.kotlin.sdk.client.Client
-import io.modelcontextprotocol.kotlin.sdk.client.StdioClientTransport
-import io.modelcontextprotocol.kotlin.sdk.types.Implementation
-import io.modelcontextprotocol.kotlin.sdk.types.LoggingMessageNotification
-import io.modelcontextprotocol.kotlin.sdk.types.Method
-import io.modelcontextprotocol.kotlin.sdk.types.TextContent
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.io.asSink
-import kotlinx.io.asSource
-import kotlinx.io.buffered
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import java.io.File
-import java.time.Instant
-import java.util.*
+import core.utils.*
+import core.utils.McpClientManager.WEB_SEARCH_CLIENT
+import core.utils.McpClientManager.transports
+import kotlinx.coroutines.runBlocking
 import java.util.logging.Level
 import java.util.logging.Logger
 
-suspend fun main()  {
+
+suspend fun main() = runBlocking {
     val logger = Logger.getLogger("McpAgent")
     val clientType = AiClientType.YANDEX_GPT
     //val model = "sonar"
@@ -52,6 +36,7 @@ suspend fun main()  {
     println("Введите exit для выхода,")
     println("s: для замены системного промпта")
 
+
     val llmClient = object : LlmClient {
         override suspend fun chat(messages: List<ChatMessage>): AiAnswer? {
             return ClientManager.ask(
@@ -69,40 +54,24 @@ suspend fun main()  {
         summaryEveryN = 10
     )
 
-    // 🛠 MCP: Запуск сервера
-    val process = ProcessBuilder(
-        "java", "-jar", "D:/projects/java/AiChallenge/server/build/libs/MPCServer-1.0-SNAPSHOT.jar"
-    ).redirectError(ProcessBuilder.Redirect.INHERIT)
-        .directory(File("D:/projects/java/AiChallenge/data"))
-        .start()
 
-    val transport = StdioClientTransport(
-        input = process.inputStream.asSource().buffered(),
-        output = process.outputStream.asSink().buffered()
-    )
-
-    val mcpClient = Client(Implementation("kotlin-mcp-client", "1.0.0"))
-
-    mcpClient.setNotificationHandler<LoggingMessageNotification>(
-        method = Method.Defined.NotificationsMessage
-    ) { notification ->
-        println("CLIENT: got logging/message")        // должен появляться в консоли
-        CompletableDeferred<Unit>().apply {
-            val msg = notification.params.data.jsonObject["message"]?.jsonPrimitive?.content
-            println("CLIENT: raw data = ${notification.params.data}")  // для отладки
-            if (!msg.isNullOrBlank()) {
-                println("\n🔔 REMINDER [${notification.params.level}]:\n$msg\n---")
-            }
-            complete(Unit)
-        }
-    }
-
-
-
+   /* val mcpClient = McpClientManager.createSavingClient()
     try {
-        mcpClient.connect(transport)
+        mcpClient.connect(transports[SAVE_TO_FILE_CLIENT]!!)
         val tools = mcpClient.listTools().tools
+
         println("✅ MCP-инструменты: ${tools.map { it.name }}")
+    } catch (e: Exception) {
+        logger.log(Level.WARNING, "Не удалось подключиться к MCP-серверу", e)
+        println("⚠️ MCP-сервер недоступен. Будет работать без инструментов.")
+    }*/
+
+
+    val webSearchClient = McpClientManager.createWebSearchClient()
+    try {
+        webSearchClient.connect(transports[WEB_SEARCH_CLIENT]!!)
+        val tools = webSearchClient.listTools().tools
+        println("✅[web-search-mcp] MCP-инструменты: ${tools.map { it.name }}")
     } catch (e: Exception) {
         logger.log(Level.WARNING, "Не удалось подключиться к MCP-серверу", e)
         println("⚠️ MCP-сервер недоступен. Будет работать без инструментов.")
@@ -117,9 +86,8 @@ suspend fun main()  {
                 println("Чат завершён.")
                 println("Создано summaries: ${chatMemory.summaryCount}")
                 ClientManager.close()
-                mcpClient.close()
-                process.destroyForcibly().waitFor()
-                return
+                McpClientManager.closeClients()
+                return@runBlocking
             }
             input.startsWith("s:") -> {
                 systemPrompt = input.substring(2).trim()
@@ -136,50 +104,6 @@ suspend fun main()  {
                 println("---")
                 continue
             }
-            input.startsWith("radd ") -> {
-                val text = input.removePrefix("radd ").trim()
-                val due = Instant.now().plusSeconds(1 * 60) // +5 минут
-                val args = mapOf(
-                    "text" to text,
-                    "due_at" to due.toString()
-                )
-                try {
-                    val result = mcpClient.callTool("add_reminder", args)
-                    val out = result.content.joinToString("\n") { (it as TextContent).text }
-                    println("📝 Reminder: $out")
-                } catch (e: Exception) {
-                    println("❌ Ошибка add_reminder: ${e.message}")
-                }
-                println("---")
-                continue
-            }
-            input == "rlist" -> {
-                try {
-                    val result = mcpClient.callTool("list_reminders", emptyMap<String, Any>())
-                    val out = result.content.joinToString("\n") { (it as TextContent).text }
-                    println("📋 Reminders:\n$out")
-                } catch (e: Exception) {
-                    println("❌ Ошибка list_reminders: ${e.message}")
-                }
-                println("---")
-                continue
-            }
-            input.startsWith("rdone ") -> {
-                val id = input.removePrefix("rdone ").trim().toLongOrNull()
-                if (id == null) {
-                    println("Нужно число: rdone <id>")
-                    continue
-                }
-                try {
-                    val result = mcpClient.callTool("complete_reminder", mapOf("id" to id))
-                    val out = result.content.joinToString("\n") { (it as TextContent).text }
-                    println("✅ $out")
-                } catch (e: Exception) {
-                    println("❌ Ошибка complete_reminder: ${e.message}")
-                }
-                println("---")
-                continue
-            }
             else -> {
                 chatMemory.addUserMessage(input)
 
@@ -191,7 +115,7 @@ suspend fun main()  {
 
                 // 🔍 Проверяем, нужно ли вызвать get_forecast
                 if (response.contains("get_forecast", ignoreCase = true)) {
-                    println("🛠 LLM запросила вызов get_forecast → вызываем MCP")
+                   /* println("🛠 LLM запросила вызов get_forecast → вызываем MCP")
 
                     val (lat, lon) = when {
                         input.contains("москва", ignoreCase = true) -> 55.7558 to 37.6176
@@ -231,7 +155,7 @@ suspend fun main()  {
                         logger.log(Level.SEVERE, "Ошибка вызова MCP", e)
                         println("❌ Ошибка вызова MCP: ${e.message}")
                         chatMemory.addAssistantMessage("Извините, не удалось получить данные о погоде.")
-                    }
+                    }*/
                 }
                 else {
                     println("Agent: $response")

@@ -37,11 +37,11 @@ suspend fun main() = runBlocking {
 
         Примеры:
         - Вопрос: «Сделай конспект по Kotlin coroutines и сохрани.»
-          Ты должен ответить: `SEARCH_AND_SAVE: конспект по Kotlin coroutines`
+          Ты должен ответить: SEARCH_AND_SAVE: конспект по Kotlin coroutines`
         - Вопрос: «Поискать лучшие практики по MCP в Kotlin и сохранить результат.»
-          Ты должен ответить: `SEARCH_AND_SAVE: лучшие практики MCP в Kotlin`
+          Ты должен ответить: SEARCH_AND_SAVE: лучшие практики MCP в Kotlin`
 
-        После строки `SEARCH_AND_SAVE: ...` НИЧЕГО больше не добавляй.
+        После строки SEARCH_AND_SAVE: ...` НИЧЕГО больше не добавляй.
 
         Если пользователь просит обычный ответ, без поиска и сохранения, отвечай обычно, без `SEARCH_AND_SAVE`.
 
@@ -133,7 +133,7 @@ suspend fun main() = runBlocking {
                 var response = answer?.answer() ?: "Не удалось получить ответ."
 
                 val prefix = "SEARCH_AND_SAVE:"
-                if (response.startsWith(prefix, ignoreCase = true)) {
+                if (response.contains(prefix, ignoreCase = true)) {
                     println("🛠 LLM запросила пайплайн search_web → summarize → save_to_file")
                     // 1.1. Тема для поиска
                     val topic = response.removePrefix(prefix).trim()

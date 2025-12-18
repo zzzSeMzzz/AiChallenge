@@ -1,11 +1,16 @@
 
 
 import core.data.base.ChatMessage
+import core.data.base.FunctionCall
 import core.data.base.LlmClient
+import core.data.base.ToolCall
 import core.utils.*
+import core.utils.McpClientManager.SAVE_TO_FILE_CLIENT
 import core.utils.McpClientManager.WEB_SEARCH_CLIENT
 import core.utils.McpClientManager.transports
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import kotlinx.coroutines.runBlocking
+import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -19,13 +24,27 @@ suspend fun main() = runBlocking {
 
     // ✅ Дефолтный системный промпт
     val defaultSystemPrompt = """
-        Если пользователь спрашивает о погоде в городе — НЕ ОТВЕЧАЙ САМ.
-        Вместо этого, вызови инструмент: get_forecast(latitude=..., longitude=...).
-        Используй реальные координаты:
-          - Москва: latitude=55.7558, longitude=37.6176
-          - Лондон: latitude=51.5074, longitude=-0.1278
-          - Париж: latitude=48.8566, longitude=2.3522
-        Пример вызова: get_forecast(latitude=55.7558, longitude=37.6176)
+        Ты — ассистент, у которого НЕТ прямого доступа к инструментам, но твой хост-приложение умеет по твоим подсказкам вызывать MCP-инструменты:
+
+        - search_web(query, limit) — ищет информацию в интернете.
+        - save_to_file(path, content) — сохраняет текст в файл.
+
+        Когда пользователь просит:
+        - «найди в интернете», «поискать информацию», «сделай конспект/summary по теме», «собери материалы и сохрани» и т.п.,
+        ты НЕ даёшь готовый ответ, а выписываешь одну строку в формате:
+
+        SEARCH_AND_SAVE: <краткое описание темы для поиска>
+
+        Примеры:
+        - Вопрос: «Сделай конспект по Kotlin coroutines и сохрани.»
+          Ты должен ответить: `SEARCH_AND_SAVE: конспект по Kotlin coroutines`
+        - Вопрос: «Поискать лучшие практики по MCP в Kotlin и сохранить результат.»
+          Ты должен ответить: `SEARCH_AND_SAVE: лучшие практики MCP в Kotlin`
+
+        После строки `SEARCH_AND_SAVE: ...` НИЧЕГО больше не добавляй.
+
+        Если пользователь просит обычный ответ, без поиска и сохранения, отвечай обычно, без `SEARCH_AND_SAVE`.
+
     """.trimIndent()
 
     var systemPrompt: String? = defaultSystemPrompt
@@ -55,7 +74,7 @@ suspend fun main() = runBlocking {
     )
 
 
-   /* val mcpClient = McpClientManager.createSavingClient()
+    val mcpClient = McpClientManager.createSavingClient()
     try {
         mcpClient.connect(transports[SAVE_TO_FILE_CLIENT]!!)
         val tools = mcpClient.listTools().tools
@@ -64,7 +83,7 @@ suspend fun main() = runBlocking {
     } catch (e: Exception) {
         logger.log(Level.WARNING, "Не удалось подключиться к MCP-серверу", e)
         println("⚠️ MCP-сервер недоступен. Будет работать без инструментов.")
-    }*/
+    }
 
 
     val webSearchClient = McpClientManager.createWebSearchClient()
@@ -113,9 +132,51 @@ suspend fun main() = runBlocking {
 
                 var response = answer?.answer() ?: "Не удалось получить ответ."
 
-                // 🔍 Проверяем, нужно ли вызвать get_forecast
-                if (response.contains("get_forecast", ignoreCase = true)) {
-                   /* println("🛠 LLM запросила вызов get_forecast → вызываем MCP")
+                val prefix = "SEARCH_AND_SAVE:"
+                if (response.startsWith(prefix, ignoreCase = true)) {
+                    println("🛠 LLM запросила пайплайн search_web → summarize → save_to_file")
+                    // 1.1. Тема для поиска
+                    val topic = response.removePrefix(prefix).trim()
+                    println("Тема поиска: $topic")
+
+                    val searchArgs = mapOf(
+                        "query" to topic,
+                        "limit" to 3
+                    )
+                    val searchResult = webSearchClient.callTool("search_web", searchArgs)
+                    val searchText = searchResult.content.joinToString("\n") { (it as TextContent).text }
+                    println("🔎 Результаты поиска (обрезано):")
+                    println(searchText.lines().take(5).joinToString("\n"))
+                    println("----")
+
+                    val summaryPrompt = """
+                    Составь краткий связный конспект по теме: "$topic"
+                    Используй текст ниже как сырой материал:
+                    $searchText
+                    """.trimIndent()
+
+                    val summaryContext = listOf(
+                        ChatMessage.user(summaryPrompt)
+                    )
+                    val summaryAnswer = llmClient.chat(summaryContext)
+                    val summary = summaryAnswer?.answer() ?: "Не удалось построить summary."
+                    println("📄 Summary:\n$summary\n----")
+
+
+                    val result = mcpClient.callTool(
+                        "save_to_file",
+                        mapOf(
+                            "path" to "summaries/summary-${System.currentTimeMillis()}.txt",
+                            "content" to summary
+                        )
+                    )
+
+                    val output = result.content.joinToString("\n") { (it as TextContent).text }
+                    println("🌤 MCP: save to file: $output")
+
+
+                } else if (response.contains("get_forecast", ignoreCase = true)) {
+                    println("🛠 LLM запросила вызов get_forecast → вызываем MCP")
 
                     val (lat, lon) = when {
                         input.contains("москва", ignoreCase = true) -> 55.7558 to 37.6176
@@ -155,7 +216,7 @@ suspend fun main() = runBlocking {
                         logger.log(Level.SEVERE, "Ошибка вызова MCP", e)
                         println("❌ Ошибка вызова MCP: ${e.message}")
                         chatMemory.addAssistantMessage("Извините, не удалось получить данные о погоде.")
-                    }*/
+                    }
                 }
                 else {
                     println("Agent: $response")

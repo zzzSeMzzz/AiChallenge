@@ -24,27 +24,24 @@ suspend fun main() = runBlocking {
 
     // ✅ Дефолтный системный промпт
     val defaultSystemPrompt = """
-        Ты — ассистент, у которого НЕТ прямого доступа к инструментам, но твой хост-приложение умеет по твоим подсказкам вызывать MCP-инструменты:
+        Ты — ассистент, у которого нет прямого доступа к Android-эмулятору, но хост-приложение умеет по твоим подсказкам вызывать MCP-инструмент deploy_android_app(apk_path, package_name, activity_name).
 
-        - search_web(query, limit) — ищет информацию в интернете.
-        - save_to_file(path, content) — сохраняет текст в файл.
+        Правила:
 
-        Когда пользователь просит:
-        - «найди в интернете», «поискать информацию», «сделай конспект/summary по теме», «собери материалы и сохрани» и т.п.,
-        ты НЕ даёшь готовый ответ, а выписываешь одну строку в формате:
+        - Если пользователь просит запустить Android приложение из APK на эмуляторе, например:
+          - "запусти андроид приложение D:/builds/app-debug.apk, пакет com.example.app, активити .MainActivity"
+          - "установи и запусти APK по пути ... для пакета ... и активити ..."
+          ты НЕ описываешь руками команды adb.
 
-        SEARCH_AND_SAVE: <краткое описание темы для поиска>
+        - Вместо этого верни одну строку в формате:
+          RUN ANDROID_APP: <apk_path>; <package_name>; <activity_name>
 
         Примеры:
-        - Вопрос: «Сделай конспект по Kotlin coroutines и сохрани.»
-          Ты должен ответить: SEARCH_AND_SAVE: конспект по Kotlin coroutines`
-        - Вопрос: «Поискать лучшие практики по MCP в Kotlin и сохранить результат.»
-          Ты должен ответить: SEARCH_AND_SAVE: лучшие практики MCP в Kotlin`
+        - Вопрос: "запусти андроид приложение D:/builds/app-debug.apk, пакет com.example.app, активити .MainActivity"
+          Ответ: "RUN ANDROID_APP: D:/builds/app-debug.apk; com.example.app; .MainActivity"
 
-        После строки SEARCH_AND_SAVE: ...` НИЧЕГО больше не добавляй.
-
-        Если пользователь просит обычный ответ, без поиска и сохранения, отвечай обычно, без `SEARCH_AND_SAVE`.
-
+        Больше никакого текста не добавляй, только одну строку RUN ANDROID_APP: ...
+        Если пользователь спрашивает о чём-то другом, отвечай как обычно, без RUN ANDROID_APP.
     """.trimIndent()
 
     var systemPrompt: String? = defaultSystemPrompt
@@ -86,15 +83,20 @@ suspend fun main() = runBlocking {
     }
 
 
-    val webSearchClient = McpClientManager.createWebSearchClient()
-    try {
-        webSearchClient.connect(transports[WEB_SEARCH_CLIENT]!!)
-        val tools = webSearchClient.listTools().tools
-        println("✅[web-search-mcp] MCP-инструменты: ${tools.map { it.name }}")
-    } catch (e: Exception) {
-        logger.log(Level.WARNING, "Не удалось подключиться к MCP-серверу", e)
-        println("⚠️ MCP-сервер недоступен. Будет работать без инструментов.")
-    }
+   /* val apkPath = "D:/asemchenko/projects/flutter/GRC/build/app/outputs/flutter-apk/app-debug.apk"  // свой путь
+
+    val result = mcpClient.callTool(
+        "deploy_android_app",
+        mapOf(
+            "apk_path" to apkPath,
+            "package_name" to "getrentacar.app",
+            "activity_name" to ".MainActivity"
+        )
+    )
+    val out = result.content.joinToString("\n") { (it as TextContent).text }
+    println("📱 deploy_android_app output:\n$out")*/
+
+
 
     while (true) {
         print("Вы: ")
@@ -132,49 +134,63 @@ suspend fun main() = runBlocking {
 
                 var response = answer?.answer() ?: "Не удалось получить ответ."
 
-                val prefix = "SEARCH_AND_SAVE:"
+                val prefix = "RUN ANDROID_APP:"
                 if (response.contains(prefix, ignoreCase = true)) {
-                    println("🛠 LLM запросила пайплайн search_web → summarize → save_to_file")
-                    // 1.1. Тема для поиска
-                    val topic = response.removePrefix(prefix).trim()
-                    println("Тема поиска: $topic")
+                    println("🛠 LLM запросила запуск Android-приложения через MCP")
 
-                    val searchArgs = mapOf(
-                        "query" to topic,
-                        "limit" to 3
-                    )
-                    val searchResult = webSearchClient.callTool("search_web", searchArgs)
-                    val searchText = searchResult.content.joinToString("\n") { (it as TextContent).text }
-                    println("🔎 Результаты поиска (обрезано):")
-                    println(searchText.lines().take(5).joinToString("\n"))
-                    println("----")
+                    // Вытаскиваем часть после префикса
+                    val tail = response.substringAfter(prefix, missingDelimiterValue = "").trim()
+                    // Ожидаем формат: apk_path; package_name; activity_name
+                    val parts = tail.split(";").map { it.trim() }.filter { it.isNotEmpty() }
+                    if (parts.size < 3) {
+                        val err = "Не удалось разобрать параметры RUN ANDROID_APP. Ожидаю: <apk_path>; <package_name>; <activity_name>"
+                        println("❌ $err")
+                        chatMemory.addAssistantMessage(err)
+                        println("---")
+                        continue
+                    }
 
-                    val summaryPrompt = """
-                    Составь краткий связный конспект по теме: "$topic"
-                    Используй текст ниже как сырой материал:
-                    $searchText
-                    """.trimIndent()
+                    val apkPath = parts[0]
+                    val packageName = parts[1]
+                    val activityName = parts[2]
 
-                    val summaryContext = listOf(
-                        ChatMessage.user(summaryPrompt)
-                    )
-                    val summaryAnswer = llmClient.chat(summaryContext)
-                    val summary = summaryAnswer?.answer() ?: "Не удалось построить summary."
-                    println("📄 Summary:\n$summary\n----")
+                    println("APK: $apkPath")
+                    println("Package: $packageName")
+                    println("Activity: $activityName")
 
-
-                    val result = mcpClient.callTool(
-                        "save_to_file",
-                        mapOf(
-                            "path" to "summaries/summary-${System.currentTimeMillis()}.txt",
-                            "content" to summary
+                    try {
+                        val result = mcpClient.callTool(
+                            "deploy_android_app",
+                            mapOf(
+                                "apk_path" to apkPath,
+                                "package_name" to packageName,
+                                "activity_name" to activityName
+                            )
                         )
-                    )
+                        val output = result.content.joinToString("\n") { (it as TextContent).text }
+                        println("📱 deploy_android_app output:\n$output")
 
-                    val output = result.content.joinToString("\n") { (it as TextContent).text }
-                    println("🌤 MCP: save to file: $output")
+                        val finalText = """
+                            Установил и запустил приложение:
+                            APK: $apkPath
+                            Пакет: $packageName
+                            Активити: $activityName
 
+                            Лог выполнения:
+                            $output
+                        """.trimIndent()
 
+                        println("Agent: $finalText")
+                        chatMemory.addAssistantMessage(finalText)
+                    } catch (e: Exception) {
+                        val err = "Не удалось установить/запустить Android-приложение: ${e.message}"
+                        println("❌ $err")
+                        logger.log(Level.SEVERE, "Ошибка deploy_android_app", e)
+                        chatMemory.addAssistantMessage(err)
+                    }
+
+                    println("---")
+                    continue
                 } else if (response.contains("get_forecast", ignoreCase = true)) {
                     println("🛠 LLM запросила вызов get_forecast → вызываем MCP")
 

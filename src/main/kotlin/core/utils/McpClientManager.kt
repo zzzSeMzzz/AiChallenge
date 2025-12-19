@@ -6,6 +6,7 @@ import io.modelcontextprotocol.kotlin.sdk.types.Implementation
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
+import trimUntilKeyword
 import java.io.File
 
 object McpClientManager {
@@ -38,10 +39,12 @@ object McpClientManager {
     }
 
     fun createSavingClient(): Client {
+        val workdir = "D:/asemchenko/projects/kotlin/AiChallenge/mcp_server/build/libs/MPCServer-1.0-SNAPSHOT.jar"
+        //val workdir = "D:/projects/java/AiChallenge/server/build/libs/MPCServer-1.0-SNAPSHOT.jar"
         val process = ProcessBuilder(
-            "java", "-jar", "D:/projects/java/AiChallenge/server/build/libs/MPCServer-1.0-SNAPSHOT.jar"
+            "java", "-jar", workdir,
         ).redirectError(ProcessBuilder.Redirect.INHERIT)
-            .directory(File("D:/projects/java/AiChallenge/data"))
+            .directory(File(workdir.trimUntilKeyword("AiChallenge")))
             .start()
 
         processes[SAVE_TO_FILE_CLIENT] = process

@@ -22,7 +22,8 @@ suspend fun buildIndexFromDirectory(
     val splitter = RecursiveTextSplitter(chunkSize = 512, chunkOverlap = 100)
     splitter.loadTokenizer()
 
-    val ollama = OllamaEmbeddingClient(model = "mxbai-embed-large")
+    //val ollama = OllamaEmbeddingClient(model = "mxbai-embed-large")
+    val ollama = OllamaEmbeddingClient(model = "all-minilm:latest")
 
     // 1. Собираем документы
     val chunks = collectChunks(File(rootDir), splitter)

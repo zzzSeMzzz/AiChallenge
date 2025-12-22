@@ -3,7 +3,7 @@
 import core.data.base.ChatMessage
 import core.data.base.LlmClient
 import core.utils.*
-import core.utils.rag.RecursiveTextSplitter
+import core.utils.rag.buildIndexFromDirectory
 import kotlinx.coroutines.runBlocking
 import java.util.logging.Logger
 
@@ -20,7 +20,7 @@ suspend fun main() = runBlocking {
     """.trimIndent()
 
 
-    val text = """
+    /*val text = """
         # Заголовок
         
         Это первый параграф с несколькими предложениями. 
@@ -38,7 +38,12 @@ suspend fun main() = runBlocking {
     chunks.forEachIndexed { i, chunk ->
         val tokens =  splitter.countTokens(chunk)
         println("Chunk $i: ${chunk.take(100)}... [${tokens} tokens]")
-    }
+    }*/
+
+//    val f = File("src/main/res/readme/")
+//    println(f.absolutePath)
+
+    buildIndexFromDirectory("src/main/res/readme/")
 
 
     var systemPrompt: String? = defaultSystemPrompt

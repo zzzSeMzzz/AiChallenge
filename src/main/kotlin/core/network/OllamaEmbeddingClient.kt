@@ -12,7 +12,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
 class OllamaEmbeddingClient(
-    private val baseUrl: String = "http://localhost:11434",
+    private val baseUrl: String = "http://127.0.0.1:11434",
     private val model: String = "mxbai-embed-large"
 ) {
     private val client = HttpClient(CIO) {

@@ -1,17 +1,10 @@
 
 
 import core.data.base.ChatMessage
-import core.data.base.FunctionCall
 import core.data.base.LlmClient
-import core.data.base.ToolCall
 import core.utils.*
-import core.utils.McpClientManager.SAVE_TO_FILE_CLIENT
-import core.utils.McpClientManager.WEB_SEARCH_CLIENT
-import core.utils.McpClientManager.transports
-import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import core.utils.rag.RecursiveTextSplitter
 import kotlinx.coroutines.runBlocking
-import java.util.*
-import java.util.logging.Level
 import java.util.logging.Logger
 
 
@@ -24,28 +17,33 @@ suspend fun main() = runBlocking {
 
     // ✅ Дефолтный системный промпт
     val defaultSystemPrompt = """
-        Ты — ассистент, у которого нет прямого доступа к Android-эмулятору, но хост-приложение умеет по твоим подсказкам вызывать MCP-инструмент deploy_android_app(apk_path, package_name, activity_name).
-
-        Правила:
-
-        - Если пользователь просит запустить Android приложение из APK на эмуляторе, например:
-          - "запусти андроид приложение D:/builds/app-debug.apk, пакет com.example.app, активити .MainActivity"
-          - "установи и запусти APK по пути ... для пакета ... и активити ..."
-          ты НЕ описываешь руками команды adb.
-
-        - Вместо этого верни одну строку в формате:
-          RUN ANDROID_APP: <apk_path>; <package_name>; <activity_name>
-
-        Примеры:
-        - Вопрос: "запусти андроид приложение D:/builds/app-debug.apk, пакет com.example.app, активити .MainActivity"
-          Ответ: "RUN ANDROID_APP: D:/builds/app-debug.apk; com.example.app; .MainActivity"
-
-        Больше никакого текста не добавляй, только одну строку RUN ANDROID_APP: ...
-        Если пользователь спрашивает о чём-то другом, отвечай как обычно, без RUN ANDROID_APP.
     """.trimIndent()
+
+
+    val text = """
+        # Заголовок
+        
+        Это первый параграф с несколькими предложениями. 
+        Второе предложение. Третье предложение.
+        
+        Второй параграф длинный и может быть разбит на несколько чанков.
+        
+        Третий абзац.
+    """.trimIndent()
+
+    val splitter = RecursiveTextSplitter(chunkSize = 50, chunkOverlap = 10)
+    splitter.loadTokenizer()
+    val chunks = splitter.splitText(text)
+
+    chunks.forEachIndexed { i, chunk ->
+        val tokens =  splitter.countTokens(chunk)
+        println("Chunk $i: ${chunk.take(100)}... [${tokens} tokens]")
+    }
+
 
     var systemPrompt: String? = defaultSystemPrompt
 
+    println()
     println("Консольный чат с $clientType, модель $model, maxTokens $maxTokens")
     println("Системный промпт по умолчанию установлен:")
     println(" > ${defaultSystemPrompt.lines().first()}...")
@@ -71,7 +69,7 @@ suspend fun main() = runBlocking {
     )
 
 
-    val mcpClient = McpClientManager.createSavingClient()
+    /*val mcpClient = McpClientManager.createSavingClient()
     try {
         mcpClient.connect(transports[SAVE_TO_FILE_CLIENT]!!)
         val tools = mcpClient.listTools().tools
@@ -80,7 +78,7 @@ suspend fun main() = runBlocking {
     } catch (e: Exception) {
         logger.log(Level.WARNING, "Не удалось подключиться к MCP-серверу", e)
         println("⚠️ MCP-сервер недоступен. Будет работать без инструментов.")
-    }
+    }*/
 
 
    /* val apkPath = "D:/asemchenko/projects/flutter/GRC/build/app/outputs/flutter-apk/app-debug.apk"  // свой путь
@@ -134,7 +132,7 @@ suspend fun main() = runBlocking {
 
                 var response = answer?.answer() ?: "Не удалось получить ответ."
 
-                val prefix = "RUN ANDROID_APP:"
+               /* val prefix = "RUN ANDROID_APP:"
                 if (response.contains(prefix, ignoreCase = true)) {
                     println("🛠 LLM запросила запуск Android-приложения через MCP")
 
@@ -238,7 +236,11 @@ suspend fun main() = runBlocking {
                     println("Agent: $response")
                     println("Промпт токенов: ${answer?.promptTokens()}, completion: ${answer?.completionTokens()}, всего: ${answer?.totalTokens()}")
                     chatMemory.addAssistantMessage(response)
-                }
+                }*/
+
+                println("Agent: $response")
+                println("Промпт токенов: ${answer?.promptTokens()}, completion: ${answer?.completionTokens()}, всего: ${answer?.totalTokens()}")
+                chatMemory.addAssistantMessage(response)
 
                 println("---")
             }

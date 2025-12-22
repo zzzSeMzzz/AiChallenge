@@ -77,6 +77,8 @@ dependencies {
     implementation("io.modelcontextprotocol:kotlin-sdk:0.8.1")
     implementation("io.modelcontextprotocol:kotlin-sdk-client:0.8.1")
 
+    implementation("com.aallam.ktoken:ktoken:0.4.0")
+
     // Kotlinx serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 

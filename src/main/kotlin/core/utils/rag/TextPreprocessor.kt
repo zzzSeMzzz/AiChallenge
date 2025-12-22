@@ -5,10 +5,10 @@ object TextPreprocessor {
 
 
         fun cleanText(text: String): String {
-            println("🔍 Анализ символов:")
+            /*println("🔍 Анализ символов:")
             println("  \\r: ${text.count { it == '\r' }}")
             println("  \\n: ${text.count { it == '\n' }}")
-            println("  \\t: ${text.count { it == '\t' }}")
+            println("  \\t: ${text.count { it == '\t' }}")*/
 
             return text
                 .replace("\uFEFF", "")           // BOM

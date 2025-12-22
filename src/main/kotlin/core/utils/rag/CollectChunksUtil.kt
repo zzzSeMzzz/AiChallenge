@@ -1,19 +1,14 @@
 package core.utils.rag
 
+import core.data.base.Chunk
+import core.data.base.EmbeddedChunk
+import core.data.base.EmbeddingIndex
 import core.network.OllamaEmbeddingClient
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
 
-@Serializable
-data class EmbeddedChunk(
-    val id: String,
-    val source: String,
-    val text: String,
-    val embedding: List<Float>,
-    val tokens: Int
-)
+
 
 suspend fun buildIndexFromDirectory(
     rootDir: String,
@@ -29,7 +24,7 @@ suspend fun buildIndexFromDirectory(
     splitter.loadTokenizer()
 
     //val ollama = OllamaEmbeddingClient(model = "mxbai-embed-large")
-    val ollama = OllamaEmbeddingClient(model = "mxbai-embed-large:latest")
+    val ollama = OllamaEmbeddingClient(model = "nomic-embed-text:latest")
 
     // 1. Собираем документы
     val chunks = collectChunks(File(rootDir), splitter)
@@ -46,6 +41,8 @@ suspend fun buildIndexFromDirectory(
         println("📝 Обрабатываем ${texts.size} чанков")
         val embeddings = ollama.embed(texts)
 
+        println("embeddings size: ${embeddings.size}")
+
         batch.zip(embeddings).forEachIndexed { idx, (chunk, embedding) ->
             embeddedChunks += EmbeddedChunk(
                 id = chunk.id,
@@ -57,25 +54,28 @@ suspend fun buildIndexFromDirectory(
         }
     }
 
+    println("✅ Эмбеддинги собраны")
     // 3. Сохраняем индекс
-    val index = mapOf(
-        "dimension" to embeddedChunks.first().embedding.size,
-        "chunks" to embeddedChunks,
-        "total_chunks" to embeddedChunks.size
+    val index = EmbeddingIndex(
+        dimension = embeddedChunks.first().embedding.size,
+        chunks =  embeddedChunks,
+        totalChunks = embeddedChunks.size
     )
 
-    File(outputFile).writeText(Json { prettyPrint = true }.encodeToString(index))
-    println("✅ Индекс сохранён: $outputFile (${embeddedChunks.size} чанков, ${index["dimension"]} dim)")
+    File(outputFile).writeText(Json {
+        prettyPrint = true
+        encodeDefaults = true
+    }.encodeToString(index))
+    println("✅ Индекс сохранён: $outputFile (${embeddedChunks.size} чанков, ${index.dimension} dim)")
 }
 
-data class Chunk(val id: String, val source: String, val text: String)
 
 fun collectChunks(rootDir: File, splitter: RecursiveTextSplitter): List<Chunk> {
     val chunks = mutableListOf<Chunk>()
     var idCounter = 0
 
     rootDir.walkTopDown()
-        .filter { it.isFile && it.extension.lowercase() in listOf("txt", "md", "kt", "java", "py") }
+        .filter { it.isFile && it.extension.lowercase() in listOf("txt", "md",) }
         .forEach { file ->
             println("📄 Обрабатываем: ${file.name}")
 

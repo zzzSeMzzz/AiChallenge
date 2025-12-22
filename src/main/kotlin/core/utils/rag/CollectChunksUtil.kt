@@ -19,7 +19,13 @@ suspend fun buildIndexFromDirectory(
     rootDir: String,
     outputFile: String = "index.json"
 ) {
-    val splitter = RecursiveTextSplitter(chunkSize = 512, chunkOverlap = 100)
+   // val splitter = RecursiveTextSplitter(chunkSize = 512, chunkOverlap = 100)
+
+    val splitter = RecursiveTextSplitter(
+        chunkSize = 300,           // ✅ Меньше!
+        chunkOverlap = 50,
+        maxContextTokens = 512    // ✅ Лимит mxbai-embed-large
+    )
     splitter.loadTokenizer()
 
     //val ollama = OllamaEmbeddingClient(model = "mxbai-embed-large")
@@ -78,8 +84,8 @@ fun collectChunks(rootDir: File, splitter: RecursiveTextSplitter): List<Chunk> {
 
             println("   Исходный: ${rawText.length} символов → Очищенный: ${cleanText.length}")
 
-            runBlocking {
-                val textChunks = splitter.splitTextWithOverlap(cleanText)  // ✅ Чистый текст!
+            runBlocking { // ✅ Чистый текст!
+                val textChunks = splitter.splitTextWithLimits(cleanText)
                 textChunks.forEach { text ->
                     val cleanedChunk = TextPreprocessor.cleanText(text)  // Двойная страховка
                     chunks += Chunk(

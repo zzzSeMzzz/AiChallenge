@@ -18,11 +18,10 @@ import kotlinx.coroutines.withContext
 
 
 class RecursiveTextSplitter(
-    private val chunkSize: Int = 100,
-    private val chunkOverlap: Int = 20,
-    private val separators: List<String> = listOf(
-        "\n\n", "\n", ". ", " ", ""
-    )
+    private val chunkSize: Int = 512,        // целевой размер
+    private val chunkOverlap: Int = 100,
+    private val maxContextTokens: Int = 8192, // ✅ ЛИМИТ МОДЕЛИ
+    private val separators: List<String> = listOf("\n\n", "\n", ". ", " ", "")
 ) {
     lateinit var tokenizer: Tokenizer
 
@@ -153,6 +152,33 @@ class RecursiveTextSplitter(
         }
 
         return overlappedChunks
+    }
+
+
+    suspend fun splitTextWithLimits(text: String): List<String> {
+        val chunks = splitTextWithOverlap(text)
+
+        // ✅ ФИЛЬТР: убираем слишком длинные чанки
+        val validChunks = chunks.filter {
+            countTokens(it) <= maxContextTokens
+        }
+
+        // ✅ ОБРЕЗАЕМ слишком длинные
+        val truncatedChunks = chunks.mapNotNull { chunk ->
+            val tokens = countTokens(chunk)
+            if (tokens <= maxContextTokens) {
+                chunk
+            } else {
+                // Обрезаем до maxContextTokens * 0.95 (запас)
+                val maxChars = (maxContextTokens * 0.95 * 4).toInt() // ~4 символа/токен
+                val truncated = chunk.take(maxChars)
+                println("⚠️  Чанк обрезан: $tokens → ${countTokens(truncated)} tokens")
+                truncated
+            }
+        }
+
+        println("📊 Чанки: ${chunks.size} → ${validChunks.size} valid + ${truncatedChunks.size - validChunks.size} truncated")
+        return truncatedChunks
     }
 
 

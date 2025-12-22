@@ -19,31 +19,6 @@ suspend fun main() = runBlocking {
     val defaultSystemPrompt = """
     """.trimIndent()
 
-
-    /*val text = """
-        # Заголовок
-        
-        Это первый параграф с несколькими предложениями. 
-        Второе предложение. Третье предложение.
-        
-        Второй параграф длинный и может быть разбит на несколько чанков.
-        
-        Третий абзац.
-    """.trimIndent()
-
-    val splitter = RecursiveTextSplitter(chunkSize = 50, chunkOverlap = 10)
-    splitter.loadTokenizer()
-    val chunks = splitter.splitText(text)
-
-    chunks.forEachIndexed { i, chunk ->
-        val tokens =  splitter.countTokens(chunk)
-        println("Chunk $i: ${chunk.take(100)}... [${tokens} tokens]")
-    }*/
-
-//    val f = File("src/main/res/readme/")
-//    println(f.absolutePath)
-
-    //ищем *.md файлы
     buildIndexFromDirectory("src/main/res/readme/")
 
 

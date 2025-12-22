@@ -43,6 +43,7 @@ suspend fun main() = runBlocking {
 //    val f = File("src/main/res/readme/")
 //    println(f.absolutePath)
 
+    //ищем *.md файлы
     buildIndexFromDirectory("src/main/res/readme/")
 
 

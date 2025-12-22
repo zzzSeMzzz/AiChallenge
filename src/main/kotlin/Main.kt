@@ -3,6 +3,7 @@
 import core.data.base.ChatMessage
 import core.data.base.LlmClient
 import core.utils.*
+import core.utils.rag.TextPreprocessor
 import core.utils.rag.buildIndexFromDirectory
 import kotlinx.coroutines.runBlocking
 import java.util.logging.Logger
@@ -42,6 +43,19 @@ suspend fun main() = runBlocking {
 
 //    val f = File("src/main/res/readme/")
 //    println(f.absolutePath)
+
+    val dirtyText = """
+        Line1\r\nLine2\r\n
+        Line3\nLine4\n\n\n
+        Линия с\tтабуляцией\r
+    """.trimIndent()
+
+    println("❌ Грязный: ${dirtyText.replace("\n", "\\n").replace("\r", "\\r")}")
+    val clean = TextPreprocessor.cleanText(dirtyText)
+    println("✅ Чистый:  ${clean.replace("\n", "\\n")}")
+
+
+
 
     buildIndexFromDirectory("src/main/res/readme/")
 

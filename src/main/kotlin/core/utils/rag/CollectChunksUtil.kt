@@ -23,7 +23,7 @@ suspend fun buildIndexFromDirectory(
     splitter.loadTokenizer()
 
     //val ollama = OllamaEmbeddingClient(model = "mxbai-embed-large")
-    val ollama = OllamaEmbeddingClient(model = "all-minilm:latest")
+    val ollama = OllamaEmbeddingClient(model = "mxbai-embed-large:latest")
 
     // 1. Собираем документы
     val chunks = collectChunks(File(rootDir), splitter)
@@ -37,6 +37,7 @@ suspend fun buildIndexFromDirectory(
         println("🔄 Эмбеддинги батч ${embeddedChunks.size / batchSize + 1}/${chunks.size / batchSize + 1}")
 
         val texts = batch.map { it.text }
+        println("📝 Обрабатываем ${texts.size} чанков")
         val embeddings = ollama.embed(texts)
 
         batch.zip(embeddings).forEachIndexed { idx, (chunk, embedding) ->
@@ -68,18 +69,27 @@ fun collectChunks(rootDir: File, splitter: RecursiveTextSplitter): List<Chunk> {
     var idCounter = 0
 
     rootDir.walkTopDown()
-        .filter { it.isFile && it.extension.lowercase() in listOf("txt", "md", "kt", "java", "py", "json") }
+        .filter { it.isFile && it.extension.lowercase() in listOf("txt", "md", "kt", "java", "py") }
         .forEach { file ->
+            println("📄 Обрабатываем: ${file.name}")
+
+            val rawText = file.readText(Charsets.UTF_8)
+            val cleanText = TextPreprocessor.normalizeMarkdown(rawText)
+
+            println("   Исходный: ${rawText.length} символов → Очищенный: ${cleanText.length}")
+
             runBlocking {
-                val textChunks = splitter.splitTextWithOverlap(file.readText())
+                val textChunks = splitter.splitTextWithOverlap(cleanText)  // ✅ Чистый текст!
                 textChunks.forEach { text ->
+                    val cleanedChunk = TextPreprocessor.cleanText(text)  // Двойная страховка
                     chunks += Chunk(
                         id = "chunk_${idCounter++}",
                         source = file.relativeTo(rootDir).path,
-                        text = text
+                        text = cleanedChunk
                     )
                 }
             }
         }
     return chunks
 }
+

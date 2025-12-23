@@ -25,14 +25,15 @@ suspend fun main() = runBlocking {
     //buildIndexFromDirectory("src/main/res/readme/", "nomic-embed-text:latest")
     val ollama = OllamaClient(defaultModel = "nomic-embed-text:latest")
 
-
-    val q = "Расскажи как на котлин построить Model Context Protocol пример mcp сервера"
     val index = loadIndex(Json { ignoreUnknownKeys = true },"index.json")
 
-    val withRag = ollama.answerWithRag(question = q, index, askModel = "llama3.2", topK = 5)
-    println("\n📚 С RAG:\n$withRag")
+    /*val q = "Расскажи как на котлин c помощью библиотек создать mcp сервер"
 
-    var systemPrompt: String? = defaultSystemPrompt
+
+    val withRag = ollama.answerWithRag(question = q, index, askModel = "llama3.2", topK = 5)
+    println("\n📚 С RAG:\n$withRag")*/
+
+    var systemPrompt: String? = null//defaultSystemPrompt
 
     println()
     println("Консольный чат с $clientType, модель $model, maxTokens $maxTokens")
@@ -40,6 +41,7 @@ suspend fun main() = runBlocking {
     println(" > ${defaultSystemPrompt.lines().first()}...")
     println("Введите exit для выхода,")
     println("s: для замены системного промпта")
+    println("rag: для запроса с RAG")
 
 
     val llmClient = object : LlmClient {
@@ -98,6 +100,13 @@ suspend fun main() = runBlocking {
             input.startsWith("s:") -> {
                 systemPrompt = input.substring(2).trim()
                 println("Системный промпт установлен")
+                continue
+            }
+            input.startsWith("rag:") -> {
+                val ragPrompt = input.substring(4).trim()
+                println("Запрос с RAG: модель llama3.2")
+                val withRag = ollama.answerWithRag(question = ragPrompt, index, askModel = "llama3.2", topK = 5)
+                println("Agent: $withRag")
                 continue
             }
             input == "st:" -> {

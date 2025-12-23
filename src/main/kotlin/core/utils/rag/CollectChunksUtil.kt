@@ -3,7 +3,7 @@ package core.utils.rag
 import core.data.base.Chunk
 import core.data.base.EmbeddedChunk
 import core.data.base.EmbeddingIndex
-import core.network.OllamaEmbeddingClient
+import core.network.OllamaClient
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -12,6 +12,7 @@ import java.io.File
 
 suspend fun buildIndexFromDirectory(
     rootDir: String,
+    model: String,
     outputFile: String = "index.json"
 ) {
    // val splitter = RecursiveTextSplitter(chunkSize = 512, chunkOverlap = 100)
@@ -24,7 +25,7 @@ suspend fun buildIndexFromDirectory(
     splitter.loadTokenizer()
 
     //val ollama = OllamaEmbeddingClient(model = "mxbai-embed-large")
-    val ollama = OllamaEmbeddingClient(model = "nomic-embed-text:latest")
+    val ollama = OllamaClient(defaultModel = model)
 
     // 1. Собираем документы
     val chunks = collectChunks(File(rootDir), splitter)

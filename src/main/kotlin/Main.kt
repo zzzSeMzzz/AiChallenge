@@ -2,9 +2,12 @@
 
 import core.data.base.ChatMessage
 import core.data.base.LlmClient
+import core.network.OllamaClient
 import core.utils.*
 import core.utils.rag.buildIndexFromDirectory
+import core.utils.rag.loadIndex
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
 import java.util.logging.Logger
 
 
@@ -19,8 +22,15 @@ suspend fun main() = runBlocking {
     val defaultSystemPrompt = """
     """.trimIndent()
 
-    buildIndexFromDirectory("src/main/res/readme/")
+    //buildIndexFromDirectory("src/main/res/readme/", "nomic-embed-text:latest")
+    val ollama = OllamaClient(defaultModel = "nomic-embed-text:latest")
 
+
+    val q = "Расскажи как на котлин построить Model Context Protocol пример mcp сервера"
+    val index = loadIndex(Json { ignoreUnknownKeys = true },"index.json")
+
+    val withRag = ollama.answerWithRag(question = q, index, askModel = "llama3.2", topK = 5)
+    println("\n📚 С RAG:\n$withRag")
 
     var systemPrompt: String? = defaultSystemPrompt
 
@@ -49,7 +59,6 @@ suspend fun main() = runBlocking {
         summaryEveryN = 10
     )
 
-
     /*val mcpClient = McpClientManager.createSavingClient()
     try {
         mcpClient.connect(transports[SAVE_TO_FILE_CLIENT]!!)
@@ -60,7 +69,6 @@ suspend fun main() = runBlocking {
         logger.log(Level.WARNING, "Не удалось подключиться к MCP-серверу", e)
         println("⚠️ MCP-сервер недоступен. Будет работать без инструментов.")
     }*/
-
 
    /* val apkPath = "D:/asemchenko/projects/flutter/GRC/build/app/outputs/flutter-apk/app-debug.apk"  // свой путь
 
@@ -74,8 +82,6 @@ suspend fun main() = runBlocking {
     )
     val out = result.content.joinToString("\n") { (it as TextContent).text }
     println("📱 deploy_android_app output:\n$out")*/
-
-
 
     while (true) {
         print("Вы: ")

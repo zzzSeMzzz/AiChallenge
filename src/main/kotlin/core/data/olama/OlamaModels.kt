@@ -10,7 +10,7 @@ data class OllamaEmbeddingRequest(
 @Serializable
 data class OllamaGenerateRequest(
     val model: String,
-    val prompt: String,  // у Ollama это prompt, не input
+    val prompt: String,
     val stream: Boolean = false
 )
 

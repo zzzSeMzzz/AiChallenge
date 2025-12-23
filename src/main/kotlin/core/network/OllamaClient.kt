@@ -18,18 +18,24 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.utils.io.jvm.javaio.toInputStream
+import io.ktor.utils.io.reader
 import kotlinx.serialization.json.Json
 
 class OllamaClient(
     private val baseUrl: String = "http://127.0.0.1:11434",
     private val defaultModel: String = "mxbai-embed-large"
 ) {
+
+    private val json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+    }
+
     private val client = HttpClient(CIO) {
+
         install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                isLenient = true
-            })
+            json(json)
         }
 
         install(HttpTimeout) {
@@ -44,12 +50,46 @@ class OllamaClient(
     }
 
     suspend fun ask(prompt: String, model: String = defaultModel): String {
-        val resp: OllamaGenerateResponse = client.post("$baseUrl/api/generate") {
+        /*val resp: OllamaGenerateResponse = client.post("$baseUrl/api/generate") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
             setBody(OllamaGenerateRequest(model, prompt, stream = false))
         }.body()
-        return resp.response.trim()
+        return resp.response.trim()*/
+        val result = generateStream(OllamaGenerateRequest(model, prompt, stream = false))
+        return result.joinToString { it.response }
+    }
+
+    suspend fun generateStream(request: OllamaGenerateRequest): List<OllamaGenerateResponse> {
+        // Установим stream = true на всякий случай
+        val effectiveRequest = request.copy(stream = true)
+
+        val httpResponse = client.post("$baseUrl/api/generate") {
+            contentType(ContentType.Application.Json)
+            setBody(effectiveRequest)
+        }
+
+        val channel = httpResponse.bodyAsChannel()
+        val reader = channel.toInputStream().bufferedReader()
+        val responses = mutableListOf<OllamaGenerateResponse>()
+
+        reader.use { br ->
+            var line: String?
+            while (br.readLine().also { line = it } != null) {
+                line?.trim()?.let { jsonLine ->
+                    if (jsonLine.isNotEmpty()) {
+                        try {
+                            val resp = json.decodeFromString<OllamaGenerateResponse>(jsonLine)
+                            responses.add(resp)
+                        } catch (e: Exception) {
+                            println("Parse error on line: $jsonLine")
+                        }
+                    }
+                }
+            }
+        }
+
+        return responses
     }
 
     suspend fun embed(texts: List<String>, model: String = defaultModel): List<List<Float>> {
@@ -132,6 +172,7 @@ class OllamaClient(
     ): String {
         val relevant = retrieveTopK(question, index, this, topK)
         val prompt = buildRagPrompt(question, relevant)
+        //println("rag prompt: $prompt")
         return ask(prompt, askModel)
     }
 }

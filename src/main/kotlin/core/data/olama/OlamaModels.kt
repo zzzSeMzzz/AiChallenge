@@ -30,3 +30,12 @@ data class OllamaGenerateResponse(
     val response: String,
     val done: Boolean
 )
+
+
+data class RAGConfig(
+    val initialK: Int = 12,     // первый ретрив
+    val minScore: Double = 0.70, // порог косинуса
+    val finalK: Int = 4,        // финальный контекст для LLM
+    val useRerank: Boolean = true,
+    val askModel: String = "llama3.2"
+)

@@ -4,12 +4,23 @@ import core.data.base.ChatMessage
 import core.data.base.LlmClient
 import core.network.OllamaClient
 import core.utils.*
-import core.utils.rag.buildIndexFromDirectory
 import core.utils.rag.loadIndex
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import java.util.logging.Logger
 
+
+/**
+ * 🔥 День 18. Реранкинг и фильтрация
+ *
+ * Добавьте второй этап после поиска: reranker или фильтр релевантности (например, через порог коэффициента похожести или используя стороннюю модель)
+ * Сравните качество ответа без фильтра и с фильтром
+ *
+ * Настройте порог отсечения нерелевантных результатов
+ *
+ * Результат: Улучшенный RAG с фильтрацией/реранкингом
+ * Формат: Видео + Код
+ */
 
 suspend fun main() = runBlocking {
     val logger = Logger.getLogger("McpAgent")

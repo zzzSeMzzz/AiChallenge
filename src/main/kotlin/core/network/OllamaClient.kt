@@ -1,25 +1,19 @@
 package core.network
 
 import core.data.base.EmbeddingIndex
-import core.data.olama.OllamaEmbeddingRequest
-import core.data.olama.OllamaEmbeddingResponse
-import core.data.olama.OllamaErrorResponse
-import core.data.olama.OllamaGenerateRequest
-import core.data.olama.OllamaGenerateResponse
-import core.utils.rag.TextPreprocessor
-import core.utils.rag.buildRagPrompt
-import core.utils.rag.retrieveTopK
+import core.data.base.ScoredChunk
+import core.data.olama.*
+import core.utils.rag.*
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import io.ktor.utils.io.jvm.javaio.toInputStream
-import io.ktor.utils.io.reader
+import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.serialization.json.Json
 
 class OllamaClient(
@@ -175,4 +169,82 @@ class OllamaClient(
         //println("rag prompt: $prompt")
         return ask(prompt, askModel)
     }
+
+
+
+    //LLM-Reranker (умно!)
+    suspend fun rerankWithLLM(
+        question: String,
+        candidates: List<ScoredChunk>,  // top-8 после фильтра
+        maxReturn: Int = 4,
+        askModel: String
+    ): List<ScoredChunk> {
+        if (candidates.size <= maxReturn) return candidates
+
+        // Формируем компактный список для rerank
+        val chunkPreview = candidates.take(8).mapIndexed { i, sc ->
+            "[${i}] score=${"%.2f".format(sc.score)}: ${sc.chunk.text.take(200)}..."
+        }.joinToString("\n\n")
+
+        val rerankPrompt = """
+    Оцени релевантность фрагментов вопросу. Верни ТОП-${maxReturn} индексов 
+    (0,1,2...) в порядке убывания полезности для ответа.
+    
+    ВОПРОС: $question
+    
+    ФРАГМЕНТЫ:
+    $chunkPreview
+    
+    Ответ: только индексы через запятую (например: "0,2,1")
+    """.trimIndent()
+
+        val rerankResult = ask(rerankPrompt, askModel)
+        println("🔄 LLM-rerank: $rerankResult")
+
+        // Парсим ответ LLM
+        val selectedIndices = rerankResult
+            .split(",", " ", "\n")
+            .mapNotNull { it.trim().toIntOrNull() }
+            .filter { it in candidates.indices }
+            .distinct()
+            .take(maxReturn)
+
+        return selectedIndices.map { candidates[it] }
+    }
+
+    //
+    suspend fun answerWithAdvancedRAG(
+        question: String,
+        index: EmbeddingIndex,
+        config: RAGConfig = RAGConfig()
+    ): String {
+        println("\n🤔 ВОПРОС: $question")
+
+        // Шаг 1: Быстрый ретрив (эмбеддинги)
+        val topK = retrieveTopKScoredChunks(question, index, this, config.initialK)
+        println("📊 Top-${config.initialK}: scores ${topK.map { "%.2f".format(it.score) }}")
+
+        // Шаг 2: Фильтр по порогу
+        val filtered = filterByThreshold(topK, config.minScore)
+
+        // Шаг 3: LLM-rerank (если включен)
+        val finalChunks = if (config.useRerank && filtered.size > 1) {
+            rerankWithLLM(question, filtered,  config.finalK, config.askModel)
+        } else {
+            filtered.take(config.finalK)
+        }
+
+        println("✅ Финал: ${finalChunks.size} чанков")
+
+        if (finalChunks.isEmpty()) {
+            return ask("""
+            Нет релевантной информации в документах по вопросу: "$question"
+        """.trimIndent(), config.askModel)
+        }
+
+        // Шаг 4: Генерация ответа
+        val prompt = buildRagPrompt(question, finalChunks.map { it.chunk })
+        return ask(prompt, config.askModel)
+    }
+
 }

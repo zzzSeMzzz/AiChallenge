@@ -2,6 +2,7 @@ package core.utils.rag
 
 import core.data.base.EmbeddedChunk
 import core.data.base.EmbeddingIndex
+import core.data.base.ScoredChunk
 import core.network.OllamaClient
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -26,6 +27,8 @@ fun cosineSim(a: List<Float>, b: List<Float>): Double {
     return if (na == 0.0 || nb == 0.0) 0.0 else dot / (sqrt(na) * sqrt(nb))
 }
 
+
+//отсеиваем лишине
 suspend fun retrieveTopK(
     query: String,
     index: EmbeddingIndex,
@@ -40,6 +43,30 @@ suspend fun retrieveTopK(
         .map { it.first }
 }
 
+suspend fun retrieveTopKScoredChunks(
+    query: String,
+    index: EmbeddingIndex,
+    embedder: OllamaClient,
+    k: Int = 5
+): List<ScoredChunk> {
+    val qEmbedding = embedder.embedSingle(query)
+    return index.chunks
+        .map { it to cosineSim(qEmbedding, it.embedding) }
+        .sortedByDescending { it.second }
+        .take(k)
+        .map { ScoredChunk( it.first, it.second) }
+}
+
+
+// Фильтрация по порогу (быстро!)
+fun filterByThreshold(
+    scoredChunks: List<ScoredChunk>,
+    minScore: Double = 0.75  // ✅ ПОРОГ ОТСЕЧЕНИЯ
+): List<ScoredChunk> {
+    val filtered = scoredChunks.filter { it.score >= minScore }
+    println("🔍 Фильтр: ${scoredChunks.size} → ${filtered.size} (порог $minScore)")
+    return filtered
+}
 
 fun buildRagPrompt(
     question: String,

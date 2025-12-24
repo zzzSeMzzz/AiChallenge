@@ -20,3 +20,10 @@ data class EmbeddingIndex(
     val chunks: List<EmbeddedChunk>,
     val totalChunks: Int
 )
+
+
+@Serializable
+data class ScoredChunk(
+    val chunk: EmbeddedChunk,
+    val score: Double  // косинусная похожесть [0.0..1.0]
+)

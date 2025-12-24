@@ -2,6 +2,7 @@
 
 import core.data.base.ChatMessage
 import core.data.base.LlmClient
+import core.data.olama.RAGConfig
 import core.network.OllamaClient
 import core.utils.*
 import core.utils.rag.loadIndex
@@ -114,10 +115,28 @@ suspend fun main() = runBlocking {
                 continue
             }
             input.startsWith("rag:") -> {
-                val ragPrompt = input.substring(4).trim()
-                println("Запрос с RAG: модель llama3.2")
-                val withRag = ollama.answerWithRag(question = ragPrompt, index, askModel = "llama3.2", topK = 5)
+                val question = input.substring(4).trim()
+                val localOllamaModel = "qwen2.5:3b"
+                println("Запрос с RAG: модель $localOllamaModel")
+                val withRag = ollama.answerWithRag(question = question, index, askModel = localOllamaModel, topK = 5)
                 println("Agent: $withRag")
+
+                println("\n1️⃣ БАЗОВЫЙ RAG (top-8 без фильтра):")
+                val basic = ollama.answerWithAdvancedRAG(
+                    question,
+                    index,
+                    RAGConfig(initialK = 8, minScore = 0.0, useRerank = false, askModel = localOllamaModel)
+                )
+                println(basic)
+
+                // УЛУЧШЕННЫЙ RAG (фильтр + rerank)
+                println("\n2️⃣ УЛУЧШЕННЫЙ RAG (фильтр 0.7 + LLM-rerank):")
+                val advanced = ollama.answerWithAdvancedRAG(
+                    question, index,
+                    RAGConfig(initialK = 12, minScore = 0.70, useRerank = true, askModel = localOllamaModel)
+                )
+                println(advanced)
+
                 continue
             }
             input == "st:" -> {

@@ -43,18 +43,23 @@ class OllamaClient(
         }*/
     }
 
-    suspend fun ask(prompt: String, model: String = defaultModel): String {
+    suspend fun ask(prompt: String, model: String): String {
         /*val resp: OllamaGenerateResponse = client.post("$baseUrl/api/generate") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
             setBody(OllamaGenerateRequest(model, prompt, stream = false))
         }.body()
         return resp.response.trim()*/
-        val result = generateStream(OllamaGenerateRequest(model, prompt, stream = false))
-        return result.joinToString { it.response }
+        val result = generateStream(OllamaGenerateRequest(model, prompt, stream = true))
+
+//        println()
+//        println()
+//        println()
+//        println("=======================")
+        return result//result.joinToString { it }
     }
 
-    suspend fun generateStream(request: OllamaGenerateRequest): List<OllamaGenerateResponse> {
+    suspend fun generateStream(request: OllamaGenerateRequest): String {
         // Установим stream = true на всякий случай
         val effectiveRequest = request.copy(stream = true)
 
@@ -66,6 +71,7 @@ class OllamaClient(
         val channel = httpResponse.bodyAsChannel()
         val reader = channel.toInputStream().bufferedReader()
         val responses = mutableListOf<OllamaGenerateResponse>()
+        val sb = StringBuilder()
 
         reader.use { br ->
             var line: String?
@@ -75,6 +81,8 @@ class OllamaClient(
                         try {
                             val resp = json.decodeFromString<OllamaGenerateResponse>(jsonLine)
                             responses.add(resp)
+                            sb.append(resp.response)
+                            //print(resp.response)
                         } catch (e: Exception) {
                             println("Parse error on line: $jsonLine")
                         }
@@ -83,7 +91,7 @@ class OllamaClient(
             }
         }
 
-        return responses
+        return sb.toString()//responses
     }
 
     suspend fun embed(texts: List<String>, model: String = defaultModel): List<List<Float>> {

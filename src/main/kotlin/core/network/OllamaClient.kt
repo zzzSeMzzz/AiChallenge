@@ -179,6 +179,24 @@ class OllamaClient(
     }
 
 
+    suspend fun ragAnswerWithSources(
+        question: String,
+        index: EmbeddingIndex,
+        askModel: String,
+        topK: Int = 5
+    ): RagAnswer {
+        val relevant = retrieveTopK(question, index, this, topK)
+        val prompt = buildRagPrompt(question, relevant)
+        val answerText = ask(prompt, askModel)
+
+        val sources = relevant.map { it.source }.distinct()
+
+        return RagAnswer(
+            answer = answerText,
+            sources = sources
+        )
+    }
+
 
     //LLM-Reranker (умно!)
     suspend fun rerankWithLLM(

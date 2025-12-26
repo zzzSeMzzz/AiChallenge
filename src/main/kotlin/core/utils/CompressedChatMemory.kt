@@ -125,6 +125,10 @@ class CompressedChatMemory(
         }
     }
 
+    fun printMessages() {
+        fullHistory.forEach { println(it) }
+    }
+
     private fun saveToFiles() {
         saveToSummaryFile()
         saveHistoryToFile()

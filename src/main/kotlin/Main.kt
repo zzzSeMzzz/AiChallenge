@@ -2,7 +2,6 @@
 
 import core.data.base.ChatMessage
 import core.data.base.LlmClient
-import core.data.olama.RAGConfig
 import core.network.OllamaClient
 import core.utils.*
 import core.utils.rag.loadIndex
@@ -27,7 +26,7 @@ suspend fun main() = runBlocking {
     val clientType = AiClientType.YANDEX_GPT
     //val model = "sonar"
     val model = "yandexgpt-lite"
-    val maxTokens = 1000
+    val maxTokens = 700
 
     // ✅ Дефолтный системный промпт
     val defaultSystemPrompt = """
@@ -42,7 +41,7 @@ suspend fun main() = runBlocking {
 
     println()
     println("Консольный чат с $clientType, модель $model, maxTokens $maxTokens")
-    println("Системный промпт по умолчанию установлен:")
+    //println("Системный промпт по умолчанию установлен:")
     println(" > ${defaultSystemPrompt.lines().first()}...")
     println("Введите exit для выхода,")
     println("s: для замены системного промпта")
@@ -66,6 +65,8 @@ suspend fun main() = runBlocking {
         summaryEveryN = 10
     )
 
+    chatMemory.printMessages()
+
     while (true) {
         print("Вы: ")
         val input = readlnOrNull()?.trim() ?: break
@@ -87,10 +88,10 @@ suspend fun main() = runBlocking {
                 val question = input.substring(4).trim()
                 val localOllamaModel = "qwen2.5:3b"
                 println("Запрос с RAG: модель $localOllamaModel")
-                val withRag = ollama.answerWithRag(question = question, index, askModel = localOllamaModel, topK = 5)
-                println("Agent: $withRag")
+                val withRag = ollama.ragAnswerWithSources(question = question, index, askModel = localOllamaModel, topK = 5)
+                println("Agent: ${withRag.answer}\nИсточник: ${withRag.sources.joinToString(", ")}")
 
-                println("\n1️⃣ БАЗОВЫЙ RAG (top-8 без фильтра):")
+               /* println("\n1️⃣ БАЗОВЫЙ RAG (top-8 без фильтра):")
                 val basic = ollama.answerWithAdvancedRAG(
                     question,
                     index,
@@ -104,7 +105,7 @@ suspend fun main() = runBlocking {
                     question, index,
                     RAGConfig(initialK = 12, minScore = 0.70, useRerank = true, askModel = localOllamaModel)
                 )
-                println(advanced)
+                println(advanced)*/
 
                 continue
             }
@@ -233,7 +234,7 @@ suspend fun main() = runBlocking {
                 }*/
 
                 println("Agent: $response")
-                println("Промпт токенов: ${answer?.promptTokens()}, completion: ${answer?.completionTokens()}, всего: ${answer?.totalTokens()}")
+                //println("Промпт токенов: ${answer?.promptTokens()}, completion: ${answer?.completionTokens()}, всего: ${answer?.totalTokens()}")
                 chatMemory.addAssistantMessage(response)
 
                 println("---")

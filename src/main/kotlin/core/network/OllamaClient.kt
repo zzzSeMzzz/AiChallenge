@@ -95,7 +95,7 @@ class OllamaClient(
     }
 
     suspend fun embed(texts: List<String>, model: String = defaultModel): List<List<Float>> {
-        return texts.map { embedSingle(it) }
+        return texts.map { embedSingle(it, model) }
     }
 
 
@@ -121,7 +121,7 @@ class OllamaClient(
             // Мы вызываем post, но не просим сразу конвертировать в body()
             val httpResponse = client.post("$baseUrl/api/embeddings") {
                 contentType(ContentType.Application.Json)
-                setBody(OllamaEmbeddingRequest(defaultModel, cleanText))
+                setBody(OllamaEmbeddingRequest(model, cleanText))
             }
 
             // Проверяем статус ответа
@@ -183,17 +183,29 @@ class OllamaClient(
         question: String,
         index: EmbeddingIndex,
         askModel: String,
+        //minScore: Double = 0.7,
         topK: Int = 5
     ): RagAnswer {
         val relevant = retrieveTopK(question, index, this, topK)
-        val prompt = buildRagPrompt(question, relevant)
+        if (relevant.isEmpty()) {
+            return RagAnswer(
+                answer = "В локальных документах нет подходящего контекста.",
+                sources = emptyList(),
+                hadContext = false
+            )
+        }
+
+
+
+        val prompt = buildRagPrompt(question,  relevant)//or filtered
         val answerText = ask(prompt, askModel)
 
         val sources = relevant.map { it.source }.distinct()
 
         return RagAnswer(
             answer = answerText,
-            sources = sources
+            sources = sources,
+            hadContext = true
         )
     }
 

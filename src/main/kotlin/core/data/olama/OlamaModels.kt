@@ -42,5 +42,6 @@ data class RAGConfig(
 
 data class RagAnswer(
     val answer: String,
-    val sources: List<String> // пути файлов
+    val sources: List<String>,// пути файлов
+    val hadContext: Boolean
 )

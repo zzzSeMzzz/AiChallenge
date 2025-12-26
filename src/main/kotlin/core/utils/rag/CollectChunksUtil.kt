@@ -40,7 +40,7 @@ suspend fun buildIndexFromDirectory(
 
         val texts = batch.map { it.text }
         println("📝 Обрабатываем ${texts.size} чанков")
-        val embeddings = ollama.embed(texts)
+        val embeddings = ollama.embed(texts, "mxbai-embed-large")
 
         println("embeddings size: ${embeddings.size}")
 

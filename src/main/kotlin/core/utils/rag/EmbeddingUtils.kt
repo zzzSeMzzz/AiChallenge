@@ -35,12 +35,26 @@ suspend fun retrieveTopK(
     embedder: OllamaClient,
     k: Int = 5
 ): List<EmbeddedChunk> {
+    return retrieveTopKWithScore(
+        query,
+        index,
+        embedder,
+        k
+    ).map { it.first }
+}
+
+
+suspend fun retrieveTopKWithScore(
+    query: String,
+    index: EmbeddingIndex,
+    embedder: OllamaClient,
+    k: Int = 5
+): List<Pair<EmbeddedChunk, Double>> {
     val qEmbedding = embedder.embedSingle(query)
     return index.chunks
         .map { it to cosineSim(qEmbedding, it.embedding) }
         .sortedByDescending { it.second }
         .take(k)
-        .map { it.first }
 }
 
 suspend fun retrieveTopKScoredChunks(
@@ -77,8 +91,9 @@ fun buildRagPrompt(
     }
 
     return """
-        Ты — ассистент, отвечающий строго по предоставленному контексту.
-        Если информации в контексте недостаточно, явно напиши, что ответа в документах нет.
+        Ты помогаешь отвечать на вопросы по проекту.
+        Используй только информацию из КОНТЕКСТА.
+        Если в контексте нет ответа, честно напиши, что информации в документах нет.
 
         КОНТЕКСТ:
         $contextBlock
@@ -86,6 +101,6 @@ fun buildRagPrompt(
         ВОПРОС:
         $question
 
-        Ответь по-русски, сжатым текстом.
+        Ответь по-русски, кратко и по делу.
     """.trimIndent()
 }

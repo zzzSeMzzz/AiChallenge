@@ -8,29 +8,47 @@ class CompressedChatMemory(
     private val llmClient: LlmClient,
     private val summaryEveryN: Int = 10,
     private val summaryFile: File = File("chat_summaries.json"),
+    private val historyFile: File = File("chat_history.json"),
 ) {
     private val summaries = mutableListOf<SerializableSummary>()
     private val recentMessages = mutableListOf<ChatMessage>()
     private var nextSummaryId: Long = 1L
+    private val fullHistory = mutableListOf<ChatMessage>()
 
     init {
-        loadFromFileIfExists()
+        loadFromFilesIfExists()
     }
 
+    val fullHistoryCount: Int get() = fullHistory.size
+    fun getFullHistory(): List<ChatMessage> = fullHistory.toList()
+    fun getLastNMessages(n: Int): List<ChatMessage> = fullHistory.takeLast(n)
+
     fun addUserMessage(text: String) {
-        recentMessages += ChatMessage(Role.USER, text)
+        val message = ChatMessage(Role.USER, text)
+        recentMessages += message
+        fullHistory += message  // ✅ СОХРАНЯЕМ В ПОЛНУЮ ИСТОРИЮ
+        saveHistoryToFile()
     }
 
     fun addAssistantMessage(text: String) {
-        recentMessages += ChatMessage(Role.ASSISTANT,text)
+        val message = ChatMessage(Role.ASSISTANT, text)
+        recentMessages += message
+        fullHistory += message
+        saveHistoryToFile()
     }
 
     fun addAssistantMessage(content: String, toolCalls: List<ToolCall>? = null) {
-        recentMessages.add(ChatMessage(Role.ASSISTANT, content, toolCalls = toolCalls))
+        val message = ChatMessage(Role.ASSISTANT, content, toolCalls = toolCalls)
+        recentMessages.add(message)
+        fullHistory += message
+        saveHistoryToFile()
     }
 
     fun addToolMessage(toolCallId: String, content: String) {
-        recentMessages.add(ChatMessage(Role.TOOL, content, toolCallId = toolCallId))
+        val message = ChatMessage(Role.TOOL, content, toolCallId = toolCallId)
+        recentMessages.add(message)
+        fullHistory += message
+        saveHistoryToFile()
     }
 
     suspend fun buildContext(systemPrompt: String?): List<ChatMessage> {
@@ -84,32 +102,75 @@ class CompressedChatMemory(
         summaries += summary
         recentMessages.clear()
 
-        saveToFileSafe()
+        saveToFiles()
     }
 
-    private fun saveToFileSafe() {
+    private fun saveHistoryToFile() {
+        try {
+            val historyJson = Json.encodeToString(fullHistory)
+            historyFile.writeText(historyJson)
+        } catch (_: Exception) {
+            // silent fail
+        }
+    }
+
+    fun printStats() {
+        println("📊 СТАТИСТИКА ЧАТА:")
+        println("  Всего сообщений: $fullHistoryCount")
+        println("  Summaries: $summaryCount")
+        println("  Recent: $recentCount")
+        println("  Последние 3 сообщения:")
+        getLastNMessages(3).forEachIndexed { i, msg ->
+            println("    ${msg.role}: ${msg.content.take(100)}...")
+        }
+    }
+
+    private fun saveToFiles() {
+        saveToSummaryFile()
+        saveHistoryToFile()
+    }
+
+    private fun saveToSummaryFile() {
         try {
             val state = SerializableMemoryState(
                 summaries = summaries.toList(),
                 lastSummaryId = nextSummaryId
             )
-            val json = Json.encodeToString(state) // -> String [web:27][web:28]
+            val json = Json.encodeToString(state)
             summaryFile.writeText(json)
         } catch (_: Exception) {
-            // можно залогировать
+            // silent fail
         }
     }
 
-    private fun loadFromFileIfExists() {
+    private fun loadFromFilesIfExists() {
+        loadSummaryFromFileIfExists()
+        loadHistoryFromFileIfExists()
+    }
+
+    private fun loadSummaryFromFileIfExists() {
         if (!summaryFile.exists()) return
         try {
-            val json = summaryFile.readText()          // [web:33][web:36]
+            val json = summaryFile.readText()
             val state = Json.decodeFromString<SerializableMemoryState>(json)
             summaries.clear()
             summaries += state.summaries
             nextSummaryId = state.lastSummaryId
         } catch (_: Exception) {
-            // файл битый — игнорируем
+            println("⚠️  Не удалось загрузить summaries")
+        }
+    }
+
+    private fun loadHistoryFromFileIfExists() {
+        if (!historyFile.exists()) return
+        try {
+            val json = historyFile.readText()
+            val loadedHistory = Json.decodeFromString<List<ChatMessage>>(json)
+            fullHistory.clear()
+            fullHistory += loadedHistory
+            println("✅ Загружено ${fullHistory.size} сообщений из истории")
+        } catch (_: Exception) {
+            println("⚠️  Не удалось загрузить полную историю")
         }
     }
 }

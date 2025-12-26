@@ -39,3 +39,8 @@ data class RAGConfig(
     val useRerank: Boolean = true,
     val askModel: String = "llama3.2"
 )
+
+data class RagAnswer(
+    val answer: String,
+    val sources: List<String> // пути файлов
+)

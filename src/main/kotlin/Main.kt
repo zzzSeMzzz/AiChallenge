@@ -12,15 +12,14 @@ import java.util.logging.Logger
 
 
 /**
- * 🔥 День 18. Реранкинг и фильтрация
+ * Реализуйте простой чат-бот, который:
+ * - хранит историю диалога,
+ * - при каждом новом вопросе ищет контекст в базе документов (через ваш RAG),
+ * - возвращает ответ с учётом найденной информации.
  *
- * Добавьте второй этап после поиска: reranker или фильтр релевантности (например, через порог коэффициента похожести или используя стороннюю модель)
- * Сравните качество ответа без фильтра и с фильтром
+ * Добавьте обязательный вывод: «источники», откуда был взят ответ.
  *
- * Настройте порог отсечения нерелевантных результатов
- *
- * Результат: Улучшенный RAG с фильтрацией/реранкингом
- * Формат: Видео + Код
+ * Результат: Мини-чат (CLI/веб) с RAG-памятью и ссылками на источники
  */
 
 suspend fun main() = runBlocking {
@@ -38,12 +37,6 @@ suspend fun main() = runBlocking {
     val ollama = OllamaClient(defaultModel = "nomic-embed-text:latest")
 
     val index = loadIndex(Json { ignoreUnknownKeys = true },"index.json")
-
-    /*val q = "Расскажи как на котлин c помощью библиотек создать mcp сервер"
-
-
-    val withRag = ollama.answerWithRag(question = q, index, askModel = "llama3.2", topK = 5)
-    println("\n📚 С RAG:\n$withRag")*/
 
     var systemPrompt: String? = null//defaultSystemPrompt
 
@@ -72,30 +65,6 @@ suspend fun main() = runBlocking {
         llmClient,
         summaryEveryN = 10
     )
-
-    /*val mcpClient = McpClientManager.createSavingClient()
-    try {
-        mcpClient.connect(transports[SAVE_TO_FILE_CLIENT]!!)
-        val tools = mcpClient.listTools().tools
-
-        println("✅ MCP-инструменты: ${tools.map { it.name }}")
-    } catch (e: Exception) {
-        logger.log(Level.WARNING, "Не удалось подключиться к MCP-серверу", e)
-        println("⚠️ MCP-сервер недоступен. Будет работать без инструментов.")
-    }*/
-
-   /* val apkPath = "D:/asemchenko/projects/flutter/GRC/build/app/outputs/flutter-apk/app-debug.apk"  // свой путь
-
-    val result = mcpClient.callTool(
-        "deploy_android_app",
-        mapOf(
-            "apk_path" to apkPath,
-            "package_name" to "getrentacar.app",
-            "activity_name" to ".MainActivity"
-        )
-    )
-    val out = result.content.joinToString("\n") { (it as TextContent).text }
-    println("📱 deploy_android_app output:\n$out")*/
 
     while (true) {
         print("Вы: ")
@@ -141,8 +110,7 @@ suspend fun main() = runBlocking {
             }
             input == "st:" -> {
                 println("=== СТАТИСТИКА СЖАТИЯ ===")
-                println("Summaries: ${chatMemory.summaryCount}")
-                println("Текущая история: ${chatMemory.recentCount} сообщений")
+                chatMemory.printStats()  // ✅ НОВАЯ СТАТИСТИКА
                 chatMemory.getLastSummary()?.let {
                     println("Последний summary: $it")
                 }

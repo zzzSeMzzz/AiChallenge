@@ -183,10 +183,10 @@ class OllamaClient(
         question: String,
         index: EmbeddingIndex,
         askModel: String,
-        //minScore: Double = 0.7,
+        minScore: Double = 0.7,
         topK: Int = 5
     ): RagAnswer {
-        val relevant = retrieveTopK(question, index, this, topK)
+        val relevant = retrieveTopKWithScore(question, index, this, topK)
         if (relevant.isEmpty()) {
             return RagAnswer(
                 answer = "В локальных документах нет подходящего контекста.",
@@ -196,16 +196,20 @@ class OllamaClient(
         }
 
 
+        val filtered = relevant.filter { it.second >= minScore }
+        val final = filtered.ifEmpty { emptyList() }
 
-        val prompt = buildRagPrompt(question,  relevant)//or filtered
+        val hadContext = final.isNotEmpty()
+
+        val prompt = buildRagPrompt(question,  relevant.map { it.first })//or filtered
         val answerText = ask(prompt, askModel)
 
-        val sources = relevant.map { it.source }.distinct()
+        val sources = relevant.map { it.first.source }.distinct()
 
         return RagAnswer(
             answer = answerText,
             sources = sources,
-            hadContext = true
+            hadContext = hadContext
         )
     }
 

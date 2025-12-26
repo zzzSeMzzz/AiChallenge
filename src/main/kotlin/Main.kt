@@ -42,7 +42,7 @@ suspend fun main() = runBlocking {
     println()
     println("Консольный чат с $clientType, модель $model, maxTokens $maxTokens")
     //println("Системный промпт по умолчанию установлен:")
-    println(" > ${defaultSystemPrompt.lines().first()}...")
+    //println(" > ${defaultSystemPrompt.lines().first()}...")
     println("Введите exit для выхода,")
     println("s: для замены системного промпта")
     println("rag: для запроса с RAG")
@@ -89,7 +89,17 @@ suspend fun main() = runBlocking {
                 val localOllamaModel = "qwen2.5:3b"
                 println("Запрос с RAG: модель $localOllamaModel")
                 val withRag = ollama.ragAnswerWithSources(question = question, index, askModel = localOllamaModel, topK = 5)
-                println("Agent: ${withRag.answer}\nИсточник: ${withRag.sources.joinToString(", ")}")
+                println("Agent: ${withRag.answer}\nИсточники: ${withRag.sources.joinToString(", ")}")
+
+
+                chatMemory.addUserMessage(question)
+                chatMemory.addAssistantMessage(
+                    buildString {
+                        append(withRag.answer)
+                        append("\n\nИсточники:\n")
+                        withRag.sources.joinToString(", ")
+                    }.trim()
+                )
 
                /* println("\n1️⃣ БАЗОВЫЙ RAG (top-8 без фильтра):")
                 val basic = ollama.answerWithAdvancedRAG(

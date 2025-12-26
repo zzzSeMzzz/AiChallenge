@@ -109,8 +109,8 @@ class CompressedChatMemory(
         try {
             val historyJson = Json.encodeToString(fullHistory)
             historyFile.writeText(historyJson)
-        } catch (_: Exception) {
-            // silent fail
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -153,7 +153,10 @@ class CompressedChatMemory(
     }
 
     private fun loadSummaryFromFileIfExists() {
-        if (!summaryFile.exists()) return
+        if (!summaryFile.exists()) {
+            println("⚠️ файл summaries не существует")
+            return
+        }
         try {
             val json = summaryFile.readText()
             val state = Json.decodeFromString<SerializableMemoryState>(json)
@@ -166,7 +169,10 @@ class CompressedChatMemory(
     }
 
     private fun loadHistoryFromFileIfExists() {
-        if (!historyFile.exists()) return
+        if (!historyFile.exists()) {
+            println("⚠️ файл history не существует")
+            return
+        }
         try {
             val json = historyFile.readText()
             val loadedHistory = Json.decodeFromString<List<ChatMessage>>(json)

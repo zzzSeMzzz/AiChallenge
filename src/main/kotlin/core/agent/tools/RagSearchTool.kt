@@ -31,6 +31,9 @@ class RagSearchTool(
 
         val withRag = ollama.ragAnswerWithSources(question = query, index, askModel = "qwen2.5:3b", topK = topK)
 
-        return ToolResult.Ok(withRag.answer)
+        //println("withRag: $withRag")
+        val json = Json.encodeToString(withRag)
+
+        return ToolResult.Ok(json)
     }
 }

@@ -40,6 +40,7 @@ data class RAGConfig(
     val askModel: String = "llama3.2"
 )
 
+@Serializable
 data class RagAnswer(
     val answer: String,
     val sources: List<String>,// пути файлов

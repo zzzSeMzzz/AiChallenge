@@ -120,11 +120,10 @@ suspend fun main() = runBlocking {
                 )
 
                 val toolResult = executor.execute(call, session)
-                val json = kotlinx.serialization.json.Json
 
                 val payload: DevHelpPayload? = (toolResult as? ToolResult.Ok)?.content?.let {
                     try {
-                        json.decodeFromString<DevHelpPayload>(it)
+                        Json.decodeFromString<DevHelpPayload>(it)
                     } catch (_: Exception) {
                         null
                     }
@@ -139,9 +138,7 @@ suspend fun main() = runBlocking {
                 println("DevHelper: вопрос: ${payload.question}")
                 println("Git контекст:\n${payload.git}")
                 println("Документы:")
-                payload.docs.forEach {
-                    println(" - ${it}")
-                }
+                payload.docs.answer
             }
             input.startsWith("s:") -> {
                 systemPrompt = input.substring(2).trim()

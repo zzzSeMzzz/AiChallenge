@@ -4,6 +4,7 @@ import core.data.base.ChatMessage
 import core.data.base.LlmClient
 import core.network.OllamaClient
 import core.utils.*
+import core.utils.rag.buildIndexFromDirectory
 import core.utils.rag.loadIndex
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -32,7 +33,7 @@ suspend fun main() = runBlocking {
     val defaultSystemPrompt = """
     """.trimIndent()
 
-    //buildIndexFromDirectory("src/main/res/readme/", "nomic-embed-text:latest")
+    //buildIndexFromDirectory("src/main/res/project_descr/", "nomic-embed-text:latest")
     val ollama = OllamaClient(defaultModel = "nomic-embed-text:latest")
 
     val index = loadIndex(Json { ignoreUnknownKeys = true },"index.json")

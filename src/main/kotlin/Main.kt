@@ -49,8 +49,8 @@ suspend fun main() = runBlocking {
     val index = loadIndex(Json { ignoreUnknownKeys = true },"index.json")
 
     val registry = DefaultToolRegistry()
-    val vectorDb = JsonVectorDb(index, ollama)
-    val ragTool = RagSearchTool(vectorDb)
+    //val vectorDb = JsonVectorDb(index, ollama)
+    val ragTool = RagSearchTool(ollama, index)
 
     // MCP git tool (реальный — с вызовом MCP-сервера)
     val gitTool: Tool? = null//GitStatusTool(/* mcpClient */)

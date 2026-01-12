@@ -5,10 +5,14 @@ import core.agent.base.ToolContext
 import core.agent.base.ToolParameters
 import core.agent.base.ToolResult
 import core.agent.base.VectorDb
+import core.data.base.EmbeddingIndex
+import core.network.OllamaClient
+import jdk.internal.agent.Agent
 import kotlinx.serialization.json.Json
 
 class RagSearchTool(
-    private val db: VectorDb
+    private val ollama: OllamaClient,
+    private val index: EmbeddingIndex,
 ) : Tool {
     override val name: String = "semantic_search"
     override val description: String =
@@ -25,27 +29,8 @@ class RagSearchTool(
             ?: return ToolResult.Error("Missing required parameter 'query'")
         val topK = (ctx.args["top_k"] as? Number)?.toInt() ?: 5
 
-        val results = db.semanticSearch(query, topK)
+        val withRag = ollama.ragAnswerWithSources(question = query, index, askModel = "qwen2.5:3b", topK = topK)
 
-        if (results.isEmpty()) {
-            return ToolResult.Ok("[]") // пустой JSON-массив
-        }
-
-        // Возвращаем JSON, чтобы LLM мог парсить
-        /*val json = buildString {
-            append("[")
-            results.forEachIndexed { i, chunk ->
-                if (i > 0) append(",")
-                append("{")
-                append("\"id\":\"").append(chunk.id).append("\",")
-                append("\"source\":\"").append(chunk.source).append("\",")
-                append("\"text\":").append(JSONObject.quote(chunk.text))
-                append("}")
-            }
-            append("]")
-        }*/
-       val json = Json.encodeToString(results)
-
-        return ToolResult.Ok(json)
+        return ToolResult.Ok(withRag.answer)
     }
 }

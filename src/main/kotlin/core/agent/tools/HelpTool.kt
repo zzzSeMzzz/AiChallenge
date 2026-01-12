@@ -38,6 +38,7 @@ class HelpTool(
             session = ctx.session
         )
         val ragResult = ragTool.execute(ragCtx)
+        //println("ragResult: $ragResult")
         val ragJson = (ragResult as? ToolResult.Ok)?.content ?: ""
 
         // 2) опциональный контекст git

@@ -137,8 +137,7 @@ suspend fun main() = runBlocking {
                 // Дальше либо отдаёшь payload в LLM, либо сам красиво рендеришь
                 println("DevHelper: вопрос: ${payload.question}")
                 println("Git контекст:\n${payload.git}")
-                println("Документы:")
-                payload.docs.answer
+                println("Agent: ${payload.docs.answer}\nИсточники: ${payload.docs.sources.joinToString(", ")}")
             }
             input.startsWith("s:") -> {
                 systemPrompt = input.substring(2).trim()

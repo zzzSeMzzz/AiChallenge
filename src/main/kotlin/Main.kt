@@ -1,5 +1,14 @@
 
 
+import core.agent.base.DefaultToolRegistry
+import core.agent.base.JsonVectorDb
+import core.agent.base.SessionContext
+import core.agent.base.Tool
+import core.agent.base.ToolCall
+import core.agent.base.ToolExecutor
+import core.agent.base.ToolResult
+import core.agent.tools.HelpTool
+import core.agent.tools.RagSearchTool
 import core.data.base.ChatMessage
 import core.data.base.LlmClient
 import core.network.OllamaClient
@@ -37,6 +46,21 @@ suspend fun main() = runBlocking {
     val ollama = OllamaClient(defaultModel = "nomic-embed-text:latest")
 
     val index = loadIndex(Json { ignoreUnknownKeys = true },"index.json")
+
+    val registry = DefaultToolRegistry()
+    val vectorDb = JsonVectorDb(index, ollama)
+    val ragTool = RagSearchTool(vectorDb)
+
+    // MCP git tool (реальный — с вызовом MCP-сервера)
+    val gitTool: Tool? = null//GitStatusTool(/* mcpClient */)
+
+    val helpTool = HelpTool(ragTool, gitTool)
+
+    registry.register(ragTool)
+    registry.register(helpTool)
+    // плюс регистрируешь MCP-инструменты, HTTP_API и т.п.
+    val executor = ToolExecutor(registry)
+
 
     var systemPrompt: String? = null//defaultSystemPrompt
 
@@ -79,6 +103,33 @@ suspend fun main() = runBlocking {
                 ClientManager.close()
                 McpClientManager.closeClients()
                 return@runBlocking
+            }
+            input.startsWith("/help") -> {
+                val question = input.removePrefix("/help").trim()
+                if (question.isBlank()) {
+                    println("Формат: /help <вопрос о проекте>")
+                    continue
+                }
+
+                // Для простоты – явно вызываем инструмент (в будущем это будет делать LLM)
+                val session = SessionContext(userId = "local", chatId = "cli")
+                val toolCall = ToolCall(
+                    id = question,
+                    name = "dev_help",
+                    arguments = mapOf("question" to question)
+                )
+
+                val toolResult = executor.execute(toolCall, session)
+
+                val content = (toolResult as? ToolResult.Ok)?.content
+                    ?: (toolResult as? ToolResult.Error)?.message
+                    ?: "Ошибка вызова dev_help"
+
+                // content – JSON, который можно либо:
+                // 1) отдать второй раз в LLM: "вот структура контекста, сгенерируй ответ"
+                // 2) разобрать и красиво отрендерить самому
+
+                println("DevHelper raw:\n$content")
             }
             input.startsWith("s:") -> {
                 systemPrompt = input.substring(2).trim()

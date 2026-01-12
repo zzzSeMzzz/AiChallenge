@@ -49,7 +49,7 @@ class HelpTool(
             )
             val gitRes = it.execute(gitCtx)
             (gitRes as? ToolResult.Ok)?.content ?: ""
-        } ?: ""
+        } ?: "Не удалось получить git context"
 
         // 3) Собираем payload
         val payload = DevHelpPayload(

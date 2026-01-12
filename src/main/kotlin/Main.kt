@@ -91,7 +91,7 @@ suspend fun main() = runBlocking {
         summaryEveryN = 10
     )
 
-    chatMemory.printMessages()
+    //chatMemory.printMessages()
 
     while (true) {
         print("Вы: ")

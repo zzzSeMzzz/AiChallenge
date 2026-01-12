@@ -16,7 +16,7 @@ data class DevHelpPayload(
 
 class HelpTool(
     private val ragTool: RagSearchTool,
-    private val gitTool: Tool?, // MCP-инструмент для git (опционально)
+    private val gitTool: Tool? = null
 ) : Tool {
     override val name: String = "dev_help"
     override val description: String =
@@ -31,23 +31,28 @@ class HelpTool(
         val question = ctx.args["question"] as? String
             ?: return ToolResult.Error("Missing 'question' parameter")
 
-        // 1) RAG по документации
-        val ragResult = ragTool.execute(
-            ctx.copy(args = mapOf("query" to question, "top_k" to 6))
+        // 1) RAG по документации — НОВЫЙ КОНТЕКСТ
+        val ragCtx = ToolContext(
+            args = mapOf("query" to question, "top_k" to 6),
+            session = ctx.session
         )
+        val ragResult = ragTool.execute(ragCtx)
         val ragJson = (ragResult as? ToolResult.Ok)?.content ?: "[]"
 
         // 2) опциональный контекст git
         val gitInfo = gitTool?.let {
-            val gitRes = it.execute(
-                ctx.copy(args = mapOf("command" to "status+branch"))
+            val gitCtx = ToolContext(
+                args = mapOf("command" to "status+branch"),
+                session = ctx.session
             )
+            val gitRes = it.execute(gitCtx)
             (gitRes as? ToolResult.Ok)?.content ?: ""
         } ?: ""
 
+        // 3) Собираем payload
         val payload = DevHelpPayload(
             question = question,
-            docs = ragJson,     // уже готовый JSON массив
+            docs = ragJson,
             git = gitInfo
         )
 
@@ -56,7 +61,6 @@ class HelpTool(
             encodeDefaults = true
         }
 
-        // 3) Собираем единый JSON, который потом скармливается LLM
         val combinedJson = json.encodeToString(payload)
         return ToolResult.Ok(combinedJson)
     }

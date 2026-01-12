@@ -7,6 +7,7 @@ import core.agent.base.Tool
 import core.agent.base.ToolCall
 import core.agent.base.ToolExecutor
 import core.agent.base.ToolResult
+import core.agent.tools.DevHelpPayload
 import core.agent.tools.HelpTool
 import core.agent.tools.RagSearchTool
 import core.data.base.ChatMessage
@@ -111,25 +112,36 @@ suspend fun main() = runBlocking {
                     continue
                 }
 
-                // Для простоты – явно вызываем инструмент (в будущем это будет делать LLM)
                 val session = SessionContext(userId = "local", chatId = "cli")
-                val toolCall = ToolCall(
-                    id = question,
+                val call = ToolCall(
+                    id = "dev_help",
                     name = "dev_help",
                     arguments = mapOf("question" to question)
                 )
 
-                val toolResult = executor.execute(toolCall, session)
+                val toolResult = executor.execute(call, session)
+                val json = kotlinx.serialization.json.Json
 
-                val content = (toolResult as? ToolResult.Ok)?.content
-                    ?: (toolResult as? ToolResult.Error)?.message
-                    ?: "Ошибка вызова dev_help"
+                val payload: DevHelpPayload? = (toolResult as? ToolResult.Ok)?.content?.let {
+                    try {
+                        json.decodeFromString<DevHelpPayload>(it)
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
 
-                // content – JSON, который можно либо:
-                // 1) отдать второй раз в LLM: "вот структура контекста, сгенерируй ответ"
-                // 2) разобрать и красиво отрендерить самому
+                if (payload == null) {
+                    println("DevHelper: не удалось обработать ответ инструмента.")
+                    continue
+                }
 
-                println("DevHelper raw:\n$content")
+                // Дальше либо отдаёшь payload в LLM, либо сам красиво рендеришь
+                println("DevHelper: вопрос: ${payload.question}")
+                println("Git контекст:\n${payload.git}")
+                println("Документы:")
+                payload.docs.forEach {
+                    println(" - ${it}")
+                }
             }
             input.startsWith("s:") -> {
                 systemPrompt = input.substring(2).trim()

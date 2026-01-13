@@ -120,6 +120,24 @@ suspend fun main() = runBlocking {
                 McpClientManager.closeClients()
                 return@runBlocking
             }
+            input.startsWith("/review") -> {
+                val params = input.removePrefix("/review").trim().split(" ")
+
+                val result = executor.execute(
+                    ToolCall(
+                        id = "dev_help",
+                        name = "pr_review",
+                        arguments = mapOf(
+                            "owner" to params[0],
+                            "repo" to params[1],
+                            "pull_number" to 1  // любой живой PR
+                        )
+                    ),
+                    SessionContext("ci", "test")
+                )
+
+                println("=== PR REVIEW ===\n${result}")
+            }
             input.startsWith("/help") -> {
                 val question = input.removePrefix("/help").trim()
                 if (question.isBlank()) {

@@ -1,16 +1,12 @@
 
 
-import core.BuildConfig
 import core.agent.base.*
-import core.agent.tools.DevHelpPayload
-import core.agent.tools.HelpTool
-import core.agent.tools.RagSearchTool
+import core.agent.tools.*
 import core.data.base.ChatMessage
 import core.data.base.LlmClient
 import core.network.OllamaClient
 import core.utils.*
 import core.utils.rag.loadIndex
-import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import java.util.logging.Logger
@@ -39,11 +35,11 @@ suspend fun main() = runBlocking {
     """.trimIndent()
 
 
-    val gitMcpClient = McpClientManager.createGitHub(BuildConfig.GITHUB_TOKEN)
+   /* val gitMcpClient = McpClientManager.createGitHub(BuildConfig.GITHUB_TOKEN)
     val transport = McpClientManager.transports[McpClientManager.GITHUB_CLIENT]
     gitMcpClient.connect(transport!!)
 
-    gitMcpClient.listTools().tools.forEach { tool -> println(tool.name) }
+    //gitMcpClient.listTools().tools.forEach { tool -> println(tool.name) }
 
     val result = gitMcpClient.callTool(
         "get_pull_request",  // название tool в MCP сервере
@@ -57,7 +53,7 @@ suspend fun main() = runBlocking {
     println("PR diff:")
     result.content.forEach { content ->
         println((content as TextContent).text)
-    }
+    }**/
 
     //buildIndexFromDirectory("src/main/res/project_descr/", "nomic-embed-text:latest")
     val ollama = OllamaClient(defaultModel = "nomic-embed-text:latest")
@@ -75,6 +71,9 @@ suspend fun main() = runBlocking {
 
     registry.register(ragTool)
     registry.register(helpTool)
+    val githubPrTool = GithubPrTool()
+    registry.register(githubPrTool)
+    registry.register(PrReviewTool(githubPrTool, index, ollama))
     // плюс регистрируешь MCP-инструменты, HTTP_API и т.п.
     val executor = ToolExecutor(registry)
 

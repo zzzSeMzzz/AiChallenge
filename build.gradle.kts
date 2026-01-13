@@ -27,6 +27,8 @@ val cloudFolder: String = localProperties.getProperty("CLOUD_FOLDER")
     ?: throw GradleException("API_KEY не найден в local.properties")
 val perplexityApiKey: String = localProperties.getProperty("PERPLEXITY_API_KEY")
     ?: throw GradleException("API_KEY не найден в local.properties")
+val gitHubToken: String = localProperties.getProperty("GITHUB_TOKEN")
+    ?: throw GradleException("GITHUB_TOKEN не найден в local.properties")
 
 // Генерация BuildConfig
 val generateBuildConfig by tasks.registering {
@@ -37,6 +39,7 @@ val generateBuildConfig by tasks.registering {
     inputs.property("yaApiKey", yaApiKey)
     inputs.property("cloudFolder", cloudFolder)
     inputs.property("perplexityApiKey", perplexityApiKey)
+    inputs.property("gitHubToken", gitHubToken)
     outputs.file(outputFile)
 
     doFirst {
@@ -48,6 +51,7 @@ val generateBuildConfig by tasks.registering {
                       const val YA_API_KEY: String = "$yaApiKey"
                       const val CLOUD_FOLDER: String = "$cloudFolder"
                       const val PERPLEXITY_API_KEY: String = "$perplexityApiKey"
+                      const val GITHUB_TOKEN: String = "$gitHubToken"
                   }
             """.trimIndent()
         )

@@ -13,6 +13,7 @@ object McpClientManager {
 
     const val WEB_SEARCH_CLIENT = "wbs"
     const val SAVE_TO_FILE_CLIENT = "svtfc"
+    const val GITHUB_CLIENT = "hthcl"
 
     val clients = mutableMapOf<String, Client>()
     val transports = mutableMapOf<String, StdioClientTransport>()
@@ -37,6 +38,28 @@ object McpClientManager {
         clients[WEB_SEARCH_CLIENT] = searchClient
         return searchClient
     }
+
+    fun createGitHub(githubToken: String): Client {
+        val process = ProcessBuilder(
+            "D:/Program/NodeJS/npx.cmd", "-y", "@modelcontextprotocol/server-github",
+            //"D:/projects/java/AiChallenge/MCP_web_search/dist/index.js"
+            "--github-token", githubToken
+        ).redirectError(ProcessBuilder.Redirect.INHERIT)
+            .start()
+
+        processes[GITHUB_CLIENT] = process
+
+        val transport = StdioClientTransport(
+            input = process.inputStream.asSource().buffered(),
+            output = process.outputStream.asSink().buffered()
+        )
+        this.transports[GITHUB_CLIENT] = transport
+
+        val searchClient = Client(Implementation("github-pr-reviewer", "1.0.0"))
+        clients[GITHUB_CLIENT] = searchClient
+        return searchClient
+    }
+
 
     fun createSavingClient(): Client {
         val workdir = "D:/asemchenko/projects/kotlin/AiChallenge/mcp_server/build/libs/MPCServer-1.0-SNAPSHOT.jar"

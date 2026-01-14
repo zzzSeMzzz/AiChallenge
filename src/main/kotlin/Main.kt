@@ -75,6 +75,12 @@ suspend fun main() = runBlocking {
     val githubPrTool = GithubPrTool()
     registry.register(githubPrTool)
     registry.register(PrReviewTool(githubPrTool, index, ollama))
+    val supportRagTool = SupportRagTool(index, ollama)
+    val ticketTool = CrmTicketsTool()
+    registry.register(supportRagTool)
+    registry.register(ticketTool)
+    val supportAssistantTool = SupportAssistantTool(supportRagTool, ticketTool, ollama)
+    registry.register(supportAssistantTool)
     // плюс регистрируешь MCP-инструменты, HTTP_API и т.п.
     val executor = ToolExecutor(registry)
 
@@ -120,6 +126,9 @@ suspend fun main() = runBlocking {
                 ClientManager.close()
                 McpClientManager.closeClients()
                 return@runBlocking
+            }
+            input.startsWith("/support") -> {
+
             }
             input.startsWith("/review") -> {
                 val params = input.removePrefix("/review").trim().split(" ")

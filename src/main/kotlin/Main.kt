@@ -128,7 +128,35 @@ suspend fun main() = runBlocking {
                 return@runBlocking
             }
             input.startsWith("/support") -> {
+                val text = input.removePrefix("/support").trim()
+                // допустим формат: "/support TCK-101: почему не работает авторизация?"
+                val parts = text.split(":", limit = 2)
+                val ticketId = parts.getOrNull(0)?.trim().takeIf { it?.startsWith("TCK-") == true }
+                val question = parts.getOrNull(1)?.trim() ?: text
 
+                val result = executor.execute(
+                    ToolCall(
+                        id = "support_assistant",
+                        name = "support_assistant",
+                        arguments = mapOf(
+                            "question" to question,
+                            "ticket_id" to ticketId
+                        )
+                    ),
+                    session = SessionContext(userId = ticketId ?: "anon", chatId = "support-cli")
+                )
+
+                val json = Json { ignoreUnknownKeys = true }
+                val payload = (result as? ToolResult.Ok)?.content?.let {
+                    json.decodeFromString<SupportAnswerPayload>(it)
+                }
+
+                if (payload == null) {
+                    println("Support: не удалось обработать запрос.")
+                } else {
+                    println("Support: ${payload.answer}")
+                    println("Источники: FAQ/документация + тикет ${payload.ticket?.id ?: "не найден"}")
+                }
             }
             input.startsWith("/review") -> {
                 val params = input.removePrefix("/review").trim().split(" ")

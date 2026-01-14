@@ -1,0 +1,102 @@
+[
+  {
+    "id": "TCK-101",
+    "user_id": "user_123",
+    "email": "user@example.com",
+    "subject": "Не работает авторизация",
+    "status": "open",
+    "last_error": "Invalid credentials",
+    "platform": "android",
+    "created_at": "2026-01-10T12:00:00Z"
+  },
+  {
+    "id": "TCK-102",
+    "user_id": "user_456",
+    "email": "developer@test.com",
+    "subject": "Приложение крашится при открытии профиля",
+    "status": "in_progress",
+    "last_error": "NullPointerException at ProfileActivity.onCreate",
+    "platform": "ios",
+    "created_at": "2026-01-11T09:15:00Z"
+  },
+  {
+    "id": "TCK-103",
+    "user_id": "user_789",
+    "email": "support@company.ru",
+    "subject": "Медленная загрузка данных",
+    "status": "open",
+    "last_error": "Request timeout after 30s",
+    "platform": "web",
+    "created_at": "2026-01-12T14:30:00Z"
+  },
+  {
+    "id": "TCK-104",
+    "user_id": "user_321",
+    "email": "test@mail.ru",
+    "subject": "Не сохраняются настройки",
+    "status": "resolved",
+    "last_error": "Database write failed",
+    "platform": "android",
+    "created_at": "2026-01-08T16:45:00Z"
+  },
+  {
+    "id": "TCK-105",
+    "user_id": "user_654",
+    "email": "admin@site.com",
+    "subject": "Ошибка при загрузке изображений",
+    "status": "open",
+    "last_error": "ImageLoader: Failed to decode image",
+    "platform": "ios",
+    "created_at": "2026-01-13T10:20:00Z"
+  },
+  {
+    "id": "TCK-106",
+    "user_id": "user_987",
+    "email": "user@domain.org",
+    "subject": "Проблема с синхронизацией",
+    "status": "in_progress",
+    "last_error": "SyncService: Connection refused",
+    "platform": "web",
+    "created_at": "2026-01-09T11:00:00Z"
+  },
+  {
+    "id": "TCK-107",
+    "user_id": "user_111",
+    "email": "customer@service.com",
+    "subject": "Не приходят push-уведомления",
+    "status": "open",
+    "last_error": "FCM token registration failed",
+    "platform": "android",
+    "created_at": "2026-01-14T08:30:00Z"
+  },
+  {
+    "id": "TCK-108",
+    "user_id": "user_222",
+    "email": "client@business.net",
+    "subject": "Ошибка при оплате",
+    "status": "critical",
+    "last_error": "PaymentGateway: Invalid card number",
+    "platform": "ios",
+    "created_at": "2026-01-15T13:15:00Z"
+  },
+  {
+    "id": "TCK-109",
+    "user_id": "user_333",
+    "email": "tester@qa.com",
+    "subject": "Белый экран при запуске",
+    "status": "open",
+    "last_error": "ReactNative: Component render error",
+    "platform": "web",
+    "created_at": "2026-01-16T15:45:00Z"
+  },
+  {
+    "id": "TCK-110",
+    "user_id": "user_444",
+    "email": "support@helpdesk.io",
+    "subject": "Проблема с геолокацией",
+    "status": "resolved",
+    "last_error": "LocationPermission denied",
+    "platform": "android",
+    "created_at": "2026-01-07T09:00:00Z"
+  }
+]

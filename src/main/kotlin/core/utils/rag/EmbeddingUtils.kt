@@ -52,6 +52,7 @@ suspend fun retrieveTopKWithScore(
 ): List<Pair<EmbeddedChunk, Double>> {
     val qEmbedding = embedder.embedSingle(query)
     return index.chunks
+        .filter { it.embedding.isNotEmpty() }
         .map { it to cosineSim(qEmbedding, it.embedding) }
         .sortedByDescending { it.second }
         .take(k)
@@ -64,6 +65,7 @@ suspend fun retrieveTopKScoredChunks(
     k: Int = 5
 ): List<ScoredChunk> {
     val qEmbedding = embedder.embedSingle(query)
+
     return index.chunks
         .map { it to cosineSim(qEmbedding, it.embedding) }
         .sortedByDescending { it.second }

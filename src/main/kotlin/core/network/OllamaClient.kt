@@ -160,8 +160,6 @@ class OllamaClient(
             null
         }
 
-
-
         return response?.embedding ?: emptyList()
     }
 

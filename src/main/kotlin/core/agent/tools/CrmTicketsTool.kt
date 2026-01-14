@@ -11,12 +11,13 @@ import java.io.File
 class CrmTicketsTool(
     private val ticketsFile: File = File("support_tickets.json")
 ) : Tool {
-    override val name = "crm_get_ticket"
-    override val description = "Get support ticket by id or email"
+    override val name = "crm_find_ticket"
+    override val description =
+        "Search support tickets by email and/or question text (subject/last_error match)."
     override val parameters = ToolParameters(
         schema = mapOf(
-            "ticket_id" to "string? - optional",
-            "email" to "string? - optional"
+            "email" to "string? - user email (optional)",
+            "query" to "string? - question text to match subject/last_error (optional)"
         )
     )
 
@@ -26,16 +27,22 @@ class CrmTicketsTool(
         json.decodeFromString(ticketsFile.readText())
 
     override suspend fun execute(ctx: ToolContext): ToolResult {
-        val ticketId = ctx.args["ticket_id"] as? String
         val email = ctx.args["email"] as? String
+        val query = (ctx.args["query"] as? String)?.lowercase()
 
         val tickets = loadTickets()
-        val ticket = when {
-            ticketId != null -> tickets.find { it.id == ticketId }
-            email != null -> tickets.find { it.email.equals(email, ignoreCase = true) }
-            else -> null
-        } ?: return ToolResult.Ok("""{"found": false}""")
 
-        return ToolResult.Ok(json.encodeToString(ticket))
+        val filtered = tickets.filter { t ->
+            val byEmail = email?.let { t.email.equals(it, ignoreCase = true) } ?: true
+            val byQuery = query?.let { q ->
+                t.subject.lowercase().contains(q) ||
+                        (t.lastError?.lowercase()?.contains(q) ?: false)
+            } ?: true
+            byEmail && byQuery
+        }
+
+        // Вернём все подходящие тикеты как JSON-массив
+        val resultJson = json.encodeToString(filtered)
+        return ToolResult.Ok(resultJson)
     }
 }

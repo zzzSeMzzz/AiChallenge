@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class SupportTicket(
-    val id: String,
+    val id: String?,
     @SerialName("user_id")
     val userId: String,
     val email: String,

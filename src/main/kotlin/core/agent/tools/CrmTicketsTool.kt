@@ -9,7 +9,7 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 class CrmTicketsTool(
-    private val ticketsFile: File = File("support_tickets.json")
+    private val ticketsFile: File = File("D:/projects/java/AiChallenge/client/src/main/res/support/tickets.json")
 ) : Tool {
     override val name = "crm_find_ticket"
     override val description =
@@ -27,6 +27,8 @@ class CrmTicketsTool(
         json.decodeFromString(ticketsFile.readText())
 
     override suspend fun execute(ctx: ToolContext): ToolResult {
+        println("file name: ${ticketsFile.name} fila path: ${ticketsFile.absolutePath}")
+
         val email = ctx.args["email"] as? String
         val query = (ctx.args["query"] as? String)?.lowercase()
 

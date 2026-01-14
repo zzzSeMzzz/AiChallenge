@@ -1,8 +1,11 @@
+
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.*
 
+
 plugins {
-    kotlin("jvm") version "1.9.22"
+    kotlin("jvm") version "2.2.0"
+    kotlin("plugin.serialization") version "2.2.0"
     application
 }
 
@@ -22,6 +25,10 @@ val yaApiKey: String = localProperties.getProperty("YA_API_KEY")
     ?: throw GradleException("API_KEY не найден в local.properties")
 val cloudFolder: String = localProperties.getProperty("CLOUD_FOLDER")
     ?: throw GradleException("API_KEY не найден в local.properties")
+val perplexityApiKey: String = localProperties.getProperty("PERPLEXITY_API_KEY")
+    ?: throw GradleException("API_KEY не найден в local.properties")
+val gitHubToken: String = localProperties.getProperty("GITHUB_TOKEN")
+    ?: throw GradleException("GITHUB_TOKEN не найден в local.properties")
 
 // Генерация BuildConfig
 val generateBuildConfig by tasks.registering {
@@ -31,6 +38,8 @@ val generateBuildConfig by tasks.registering {
 
     inputs.property("yaApiKey", yaApiKey)
     inputs.property("cloudFolder", cloudFolder)
+    inputs.property("perplexityApiKey", perplexityApiKey)
+    inputs.property("gitHubToken", gitHubToken)
     outputs.file(outputFile)
 
     doFirst {
@@ -41,6 +50,8 @@ val generateBuildConfig by tasks.registering {
                   object BuildConfig {
                       const val YA_API_KEY: String = "$yaApiKey"
                       const val CLOUD_FOLDER: String = "$cloudFolder"
+                      const val PERPLEXITY_API_KEY: String = "$perplexityApiKey"
+                      const val GITHUB_TOKEN: String = "$gitHubToken"
                   }
             """.trimIndent()
         )
@@ -60,27 +71,37 @@ dependencies {
     testImplementation(kotlin("test"))
 
     // Корутины
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    /*implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")*/
 
-    // Retrofit
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("io.ktor:ktor-client-core:3.0.2")
+    implementation("io.ktor:ktor-client-cio:3.0.2")
+    implementation("io.ktor:ktor-client-content-negotiation:3.0.2")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.0.2")
 
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    // GSON (Retrofit использует встроенный Gson, но можно указать явно)
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("io.modelcontextprotocol:kotlin-sdk:0.8.1")
+    implementation("io.modelcontextprotocol:kotlin-sdk-client:0.8.1")
 
-    // OkHttp
-    implementation("com.squareup.okhttp3:okhttp:4.11.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+    implementation("com.aallam.ktoken:ktoken:0.4.0")
+
+    // Kotlinx serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
+    implementation("org.slf4j:slf4j-simple:2.0.12")
+    implementation("io.ktor:ktor-client-logging:3.0.3")
 }
 
 tasks.test {
     useJUnitPlatform()
 }
 
+// 👇 НОВЫЙ БЛОК: Правильное место для jvmToolchain
+kotlin {
+    jvmToolchain(17)
+}
+
 tasks.withType<KotlinCompile> {
     dependsOn(generateBuildConfig)
-    kotlinOptions.jvmTarget = "1.8"
+    //kotlinOptions.jvmTarget = "1.8"
 }
 
 application {

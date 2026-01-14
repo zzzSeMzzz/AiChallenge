@@ -56,6 +56,7 @@ suspend fun main() = runBlocking {
     }**/
 
     //buildIndexFromDirectory("src/main/res/project_descr/", "nomic-embed-text:latest")
+
     val ollama = OllamaClient(defaultModel = "nomic-embed-text:latest")
 
     val index = loadIndex(Json { ignoreUnknownKeys = true },"index.json")
